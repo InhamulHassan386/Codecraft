@@ -1,0 +1,614 @@
+export const IMAGES = {
+  teamOffice: "https://images.pexels.com/photos/6804068/pexels-photo-6804068.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+  teamPair: "https://images.pexels.com/photos/6803554/pexels-photo-6803554.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+  teamWork: "https://images.pexels.com/photos/6804076/pexels-photo-6804076.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+  teamCollab: "https://images.pexels.com/photos/6803525/pexels-photo-6803525.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+  teamBreak: "https://images.pexels.com/photos/6805161/pexels-photo-6805161.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+  codeDebug: "https://images.pexels.com/photos/34803990/pexels-photo-34803990.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+  analytics: "https://images.pexels.com/photos/12969403/pexels-photo-12969403.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+  codeBlur: "https://images.pexels.com/photos/34804024/pexels-photo-34804024.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+  colorDash: "https://images.pexels.com/photos/17279854/pexels-photo-17279854.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+  laptopComm: "https://images.pexels.com/photos/8284731/pexels-photo-8284731.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+  browser: "https://images.pexels.com/photos/6986455/pexels-photo-6986455.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+  deskSetup: "https://images.pexels.com/photos/16323586/pexels-photo-16323586.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+  phoneHeart: "https://images.pexels.com/photos/7341880/pexels-photo-7341880.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+  phoneOutdoor: "https://images.pexels.com/photos/17467937/pexels-photo-17467937.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+  phoneSocial: "https://images.pexels.com/photos/8488289/pexels-photo-8488289.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+  phoneHand: "https://images.pexels.com/photos/574284/pexels-photo-574284.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+};
+
+export type Service = {
+  slug: string;
+  icon: string;
+  title: string;
+  tagline: string;
+  description: string;
+  features: string[];
+  benefits: string[];
+  technologies: string[];
+  deliverables: string[];
+};
+
+export const services: Service[] = [
+  {
+    slug: "web-development",
+    icon: "Globe",
+    title: "Web Development",
+    tagline: "High-performance websites & web apps",
+    description: "We design and engineer blazing-fast, SEO-friendly websites and complex web applications — from corporate sites to custom platforms — built with modern frameworks and clean architecture.",
+    features: ["Business Websites", "Corporate Websites", "Custom Web Applications", "E-Commerce", "CMS Development", "Progressive Web Apps", "API Development", "Performance Optimization"],
+    benefits: ["Faster load times & better SEO", "Scalable, maintainable codebase", "Pixel-perfect responsive design", "Enterprise-grade security"],
+    technologies: ["React", "Node.js", "Laravel", "PHP", "Python", "MySQL", "MongoDB"],
+    deliverables: ["Responsive frontend", "Admin panel", "API documentation", "Deployment & handover"],
+  },
+  {
+    slug: "mobile-development",
+    icon: "Smartphone",
+    title: "Mobile App Development",
+    tagline: "Native-quality iOS & Android apps",
+    description: "Cross-platform and native mobile apps with premium UX, offline support and app-store-ready polish — one codebase, two platforms, zero compromise.",
+    features: ["Android Apps", "iOS Apps", "Flutter Apps", "Cross-platform Apps", "App Store Deployment", "Push Notifications", "In-App Payments", "Offline Mode"],
+    benefits: ["Single codebase, lower cost", "Native-like performance", "Faster time to market", "App Store & Play Store launch support"],
+    technologies: ["Flutter", "React Native", "Node.js", "MongoDB", "Firebase"],
+    deliverables: ["iOS & Android builds", "Store listings", "Backend APIs", "Analytics setup"],
+  },
+  {
+    slug: "ui-ux-design",
+    icon: "PenTool",
+    title: "UI/UX Design",
+    tagline: "Interfaces users love to use",
+    description: "Research-driven product design — from user journeys and wireframes to polished design systems in Figma — that converts visitors into customers.",
+    features: ["User Research", "Wireframes", "Figma Design", "Prototyping", "Design Systems", "Usability Testing", "Brand Identity", "Design Audits"],
+    benefits: ["Higher conversion rates", "Consistent brand experience", "Developer-ready handoff", "Validated with real users"],
+    technologies: ["Figma", "Design Systems", "Prototyping", "User Testing"],
+    deliverables: ["Wireframes & flows", "Hi-fi Figma designs", "Interactive prototype", "Design system"],
+  },
+  {
+    slug: "software-development",
+    icon: "Cpu",
+    title: "Software Development",
+    tagline: "Custom systems & SaaS platforms",
+    description: "Custom ERP, CRM, SaaS and enterprise software engineered for reliability — secure architecture, automated testing and clean documentation.",
+    features: ["SaaS Platforms", "ERP & CRM Systems", "Enterprise Software", "API Development", "System Integration", "Microservices", "DevOps Setup", "Legacy Modernization"],
+    benefits: ["Tailored to your workflow", "Secure & compliant", "Scales with your growth", "Full documentation & training"],
+    technologies: ["Python", "Node.js", "Laravel", "MySQL", "MongoDB", "Git"],
+    deliverables: ["Technical architecture", "Tested codebase", "CI/CD pipeline", "Admin training"],
+  },
+  {
+    slug: "ecommerce-development",
+    icon: "ShoppingBag",
+    title: "E-Commerce Development",
+    tagline: "Stores that sell around the clock",
+    description: "Conversion-optimized online stores with seamless checkout, payment gateways and inventory management — built to grow revenue from day one.",
+    features: ["Custom Storefronts", "Payment Gateways", "Inventory Management", "Order Tracking", "Discount Engine", "Multi-currency", "Headless Commerce", "Marketplace Features"],
+    benefits: ["Optimized checkout flow", "Secure payments (PCI)", "Easy product management", "Built to scale traffic spikes"],
+    technologies: ["React", "Node.js", "Laravel", "MySQL", "Stripe"],
+    deliverables: ["Storefront + admin", "Payment integration", "Shipping setup", "SEO foundation"],
+  },
+  {
+    slug: "ai-automation",
+    icon: "Sparkles",
+    title: "AI & Automation",
+    tagline: "Intelligent workflows & chatbots",
+    description: "Practical AI that pays for itself — chatbots, document processing, predictive insights and workflow automation integrated into your existing tools.",
+    features: ["AI Chatbots", "Workflow Automation", "Document AI", "Recommendation Engines", "Predictive Analytics", "LLM Integration", "Process Mining", "RPA Solutions"],
+    benefits: ["Cut manual work by up to 60%", "24/7 customer responses", "Data-driven decisions", "Integrates with your stack"],
+    technologies: ["Python", "OpenAI", "Node.js", "Vector DBs", "LangChain"],
+    deliverables: ["AI prototype", "Integration layer", "Evaluation report", "Monitoring dashboard"],
+  },
+  {
+    slug: "cloud-solutions",
+    icon: "Cloud",
+    title: "Cloud Solutions",
+    tagline: "Deploy, scale & stay secure",
+    description: "Cloud architecture, migration and DevOps — get reliable infrastructure with automated deployments, monitoring and cost optimization.",
+    features: ["Cloud Migration", "AWS / GCP Setup", "CI/CD Pipelines", "Docker & Kubernetes", "Monitoring & Alerts", "Backup & DR", "Cost Optimization", "Security Hardening"],
+    benefits: ["99.9% uptime targets", "Deploy in minutes", "Pay only for what you use", "Security best practices"],
+    technologies: ["AWS", "Docker", "GitHub Actions", "Node.js", "Linux"],
+    deliverables: ["Cloud architecture", "CI/CD pipeline", "Monitoring setup", "Runbooks"],
+  },
+  {
+    slug: "maintenance-support",
+    icon: "ShieldCheck",
+    title: "Maintenance & Support",
+    tagline: "We keep you running smoothly",
+    description: "Proactive maintenance plans — updates, backups, security patches, performance tuning and priority support with clear SLAs.",
+    features: ["24/7 Monitoring", "Security Patches", "Daily Backups", "Performance Tuning", "Bug Fixes", "Content Updates", "Uptime SLA", "Monthly Reports"],
+    benefits: ["Peace of mind SLA", "Prevent issues before users see them", "Predictable monthly cost", "Direct line to engineers"],
+    technologies: ["Git", "GitHub", "Monitoring", "Cloud"],
+    deliverables: ["SLA agreement", "Monthly health report", "Backup verification", "Priority support channel"],
+  },
+];
+
+export type Project = {
+  slug: string;
+  name: string;
+  category: "Web" | "Mobile" | "UI/UX" | "Software" | "E-Commerce";
+  description: string;
+  longDescription: string;
+  image: string;
+  technologies: string[];
+  results: { value: string; label: string }[];
+  year: string;
+  client: string;
+  duration: string;
+};
+
+export const projects: Project[] = [
+  {
+    slug: "novapay-fintech",
+    name: "NovaPay — Fintech Dashboard",
+    category: "Web",
+    description: "Real-time payments dashboard processing $2M+ monthly volume with analytics, KYC flows and multi-role access.",
+    longDescription: "NovaPay needed a mission-critical payments dashboard for merchants. We built a React + Node.js platform with real-time transaction streams, role-based access, KYC onboarding and an analytics engine — handling thousands of concurrent users with sub-second updates.",
+    image: IMAGES.analytics,
+    technologies: ["React", "Node.js", "MongoDB", "WebSockets"],
+    results: [{ value: "3.2x", label: "Faster onboarding" }, { value: "99.98%", label: "Uptime" }, { value: "+41%", label: "Merchant retention" }],
+    year: "2025",
+    client: "NovaPay Inc.",
+    duration: "14 weeks",
+  },
+  {
+    slug: "mediconnect",
+    name: "MediConnect — Telehealth App",
+    category: "Mobile",
+    description: "HIPAA-conscious telehealth app with video consults, e-prescriptions and appointment scheduling for 40k+ patients.",
+    longDescription: "A Flutter-based telehealth platform connecting patients with doctors. Features include secure video consultations, smart scheduling, e-prescriptions, push reminders and an admin panel for clinics — launched on both stores in under 4 months.",
+    image: IMAGES.phoneHeart,
+    technologies: ["Flutter", "Node.js", "MongoDB", "WebRTC"],
+    results: [{ value: "40k+", label: "Active patients" }, { value: "4.8★", label: "Store rating" }, { value: "-62%", label: "No-show rate" }],
+    year: "2025",
+    client: "MediConnect Health",
+    duration: "16 weeks",
+  },
+  {
+    slug: "lumina-commerce",
+    name: "Lumina — Fashion E-Commerce",
+    category: "E-Commerce",
+    description: "Headless fashion storefront with 1.1s load times, AR try-on and one-page checkout lifting conversion 2.4x.",
+    longDescription: "Lumina's legacy store was slow and leaked mobile revenue. We rebuilt it headless with React, integrated Stripe, multi-currency and a one-page checkout — plus an AR try-on experience that doubled engagement.",
+    image: IMAGES.deskSetup,
+    technologies: ["React", "Node.js", "MySQL", "Stripe"],
+    results: [{ value: "2.4x", label: "Conversion rate" }, { value: "1.1s", label: "Avg. load time" }, { value: "+187%", label: "Mobile revenue" }],
+    year: "2024",
+    client: "Lumina Fashion",
+    duration: "12 weeks",
+  },
+  {
+    slug: "orbit-erp",
+    name: "Orbit — Logistics ERP",
+    category: "Software",
+    description: "Custom ERP unifying fleet, warehouse and billing across 12 depots — cutting manual reporting from days to minutes.",
+    longDescription: "Orbit Logistics ran on spreadsheets across 12 depots. We delivered a modular ERP covering fleet tracking, warehouse inventory, invoicing and BI dashboards — with role-based permissions and full audit trails.",
+    image: IMAGES.codeDebug,
+    technologies: ["Laravel", "React", "MySQL", "Redis"],
+    results: [{ value: "-78%", label: "Manual reporting time" }, { value: "12", label: "Depots unified" }, { value: "100%", label: "Audit coverage" }],
+    year: "2024",
+    client: "Orbit Logistics",
+    duration: "20 weeks",
+  },
+  {
+    slug: "aura-banking-ux",
+    name: "Aura — Digital Banking UX",
+    category: "UI/UX",
+    description: "End-to-end UX redesign for a digital bank — 120+ screens, design system and prototype validated with 200 users.",
+    longDescription: "Aura Bank's app had strong features but weak adoption. Our team ran research with 200+ users, rebuilt the information architecture, delivered 120+ screens and a complete Figma design system — lifting activation dramatically.",
+    image: IMAGES.colorDash,
+    technologies: ["Figma", "Design System", "Prototyping"],
+    results: [{ value: "+64%", label: "Activation rate" }, { value: "120+", label: "Screens designed" }, { value: "4.9★", label: "Usability score" }],
+    year: "2025",
+    client: "Aura Bank",
+    duration: "10 weeks",
+  },
+  {
+    slug: "foodfleet",
+    name: "FoodFleet — Delivery Platform",
+    category: "Mobile",
+    description: "3-sided food delivery ecosystem — customer app, rider app and restaurant dashboard serving 120+ restaurants.",
+    longDescription: "FoodFleet needed a full delivery ecosystem: a customer app, a rider app with live tracking and a restaurant dashboard. We shipped all three with real-time order flows, payments and dispatch logic.",
+    image: IMAGES.phoneSocial,
+    technologies: ["React Native", "Node.js", "MongoDB"],
+    results: [{ value: "120+", label: "Restaurants live" }, { value: "28min", label: "Avg. delivery" }, { value: "95k+", label: "Orders processed" }],
+    year: "2024",
+    client: "FoodFleet",
+    duration: "18 weeks",
+  },
+  {
+    slug: "eduspark-lms",
+    name: "EduSpark — Learning Platform",
+    category: "Web",
+    description: "LMS with live classes, quizzes and gamification — now used by 25k students across 40 institutions.",
+    longDescription: "EduSpark is a full learning management system with live classrooms, auto-graded quizzes, certificates, gamification and analytics for instructors — architected to scale to hundreds of thousands of learners.",
+    image: IMAGES.laptopComm,
+    technologies: ["React", "Laravel", "MySQL"],
+    results: [{ value: "25k+", label: "Active students" }, { value: "40", label: "Institutions" }, { value: "+52%", label: "Completion rate" }],
+    year: "2023",
+    client: "EduSpark",
+    duration: "15 weeks",
+  },
+  {
+    slug: "sentinel-ai",
+    name: "Sentinel — AI Support Copilot",
+    category: "Software",
+    description: "AI copilot resolving 68% of support tickets automatically — integrated with Zendesk, Slack and internal docs.",
+    longDescription: "Sentinel is an LLM-powered support copilot trained on company docs. It drafts answers, auto-resolves common tickets and escalates with full context — cutting response times from hours to seconds.",
+    image: IMAGES.codeBlur,
+    technologies: ["Python", "OpenAI", "Node.js", "Pinecone"],
+    results: [{ value: "68%", label: "Auto-resolved" }, { value: "-81%", label: "Response time" }, { value: "4.7★", label: "CSAT score" }],
+    year: "2025",
+    client: "Sentinel SaaS",
+    duration: "11 weeks",
+  },
+];
+
+export type TechItem = { name: string; description: string; level: number };
+export const techCategories: { title: string; icon: string; items: TechItem[]; blurb: string }[] = [
+  {
+    title: "Frontend",
+    icon: "Layout",
+    blurb: "Pixel-perfect, accessible interfaces built with modern component architecture.",
+    items: [
+      { name: "HTML", description: "Semantic, accessible markup foundation.", level: 98 },
+      { name: "CSS", description: "Modern layouts, animations & responsive systems.", level: 96 },
+      { name: "JavaScript", description: "Interactive, type-safe client logic.", level: 95 },
+      { name: "React", description: "Our go-to for scalable web applications.", level: 97 },
+    ],
+  },
+  {
+    title: "Backend",
+    icon: "Server",
+    blurb: "Secure, scalable APIs and business logic that power your product.",
+    items: [
+      { name: "Node.js", description: "High-throughput APIs & real-time services.", level: 96 },
+      { name: "PHP", description: "Battle-tested server-side development.", level: 90 },
+      { name: "Laravel", description: "Elegant framework for robust backends.", level: 94 },
+      { name: "Python", description: "Data, AI and automation powerhouse.", level: 93 },
+    ],
+  },
+  {
+    title: "Mobile",
+    icon: "Smartphone",
+    blurb: "One codebase, two platforms — native-quality mobile experiences.",
+    items: [
+      { name: "Flutter", description: "Beautiful cross-platform apps from one codebase.", level: 95 },
+      { name: "React Native", description: "Native apps powered by React.", level: 92 },
+    ],
+  },
+  {
+    title: "Database",
+    icon: "Database",
+    blurb: "The right data layer for your scale — relational or document.",
+    items: [
+      { name: "MySQL", description: "Reliable relational data at scale.", level: 94 },
+      { name: "MongoDB", description: "Flexible document store for rapid iteration.", level: 93 },
+    ],
+  },
+  {
+    title: "Tools",
+    icon: "Wrench",
+    blurb: "Professional workflow tooling for quality and velocity.",
+    items: [
+      { name: "Git", description: "Version control & branching discipline.", level: 97 },
+      { name: "GitHub", description: "CI/CD, reviews & collaboration.", level: 96 },
+      { name: "Figma", description: "Design, prototyping & handoff.", level: 95 },
+      { name: "VS Code", description: "A tuned, consistent dev environment.", level: 98 },
+    ],
+  },
+];
+
+export type TeamMember = {
+  name: string;
+  role: string;
+  bio: string;
+  skills: string[];
+  image: string;
+  location: string;
+};
+
+export const team: TeamMember[] = [
+  {
+    name: "Muhammad Ali",
+    role: "Senior Full Stack Developer",
+    bio: "8+ years building scalable web platforms. Leads architecture decisions and mentors the engineering team.",
+    skills: ["React", "Node.js", "System Design"],
+    image: "https://images.pexels.com/photos/16764124/pexels-photo-16764124.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    location: "Lahore, PK",
+  },
+  {
+    name: "Sarah Mitchell",
+    role: "Head of Design",
+    bio: "Product designer obsessed with clarity. Owns our design systems and leads UX research across client projects.",
+    skills: ["UI/UX", "Figma", "Design Systems"],
+    image: "https://images.pexels.com/photos/33680700/pexels-photo-33680700.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    location: "Remote, UK",
+  },
+  {
+    name: "David Chen",
+    role: "Mobile Lead — Flutter",
+    bio: "Shipped 20+ apps to both stores. Specializes in performant cross-platform apps with native polish.",
+    skills: ["Flutter", "Dart", "Firebase"],
+    image: "https://images.pexels.com/photos/7752846/pexels-photo-7752846.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    location: "Remote, SG",
+  },
+  {
+    name: "Ayesha Khan",
+    role: "Backend Engineer — Python",
+    bio: "Builds secure APIs and AI pipelines. Loves clean architecture, testing and documentation that people read.",
+    skills: ["Python", "AI/ML", "PostgreSQL"],
+    image: "https://images.pexels.com/photos/25651531/pexels-photo-25651531.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    location: "Karachi, PK",
+  },
+  {
+    name: "James Carter",
+    role: "DevOps & Cloud Architect",
+    bio: "Keeps everything running at 99.9%. Designs CI/CD pipelines and cost-efficient cloud infrastructure.",
+    skills: ["AWS", "Docker", "Kubernetes"],
+    image: "https://images.pexels.com/photos/38740728/pexels-photo-38740728.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    location: "Remote, US",
+  },
+  {
+    name: "Amara Okafor",
+    role: "QA & Delivery Manager",
+    bio: "Guardian of quality. Runs our testing process and makes sure every release ships on time, every time.",
+    skills: ["QA Automation", "Agile", "Cypress"],
+    image: "https://images.pexels.com/photos/8312669/pexels-photo-8312669.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    location: "Remote, NG",
+  },
+  {
+    name: "Usman Tariq",
+    role: "Frontend Developer — React",
+    bio: "Turns Figma into fast, accessible interfaces. Performance budgets and micro-interactions are his thing.",
+    skills: ["React", "TypeScript", "Tailwind"],
+    image: "https://images.pexels.com/photos/7752822/pexels-photo-7752822.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    location: "Islamabad, PK",
+  },
+  {
+    name: "Daniel Roberts",
+    role: "Project Manager",
+    bio: "Your single point of contact. Translates business goals into sprints, timelines and shipped software.",
+    skills: ["Scrum", "Client Success", "Jira"],
+    image: "https://images.pexels.com/photos/7752816/pexels-photo-7752816.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    location: "Remote, US",
+  },
+];
+
+export type Testimonial = { name: string; company: string; role: string; review: string; rating: number; image: string };
+export const testimonials: Testimonial[] = [
+  {
+    name: "Michael Reynolds",
+    company: "NovaPay Inc.",
+    role: "CEO",
+    review: "CodeCraft rebuilt our payments dashboard from the ground up. The team is sharp, communicative and genuinely cares about the product. Uptime has been flawless since launch.",
+    rating: 5,
+    image: "https://images.pexels.com/photos/7752805/pexels-photo-7752805.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+  },
+  {
+    name: "Elena Rodriguez",
+    company: "Lumina Fashion",
+    role: "Founder",
+    review: "Our conversion rate more than doubled after the rebuild. The new store is fast, beautiful and our customers notice. Best investment we made this year.",
+    rating: 5,
+    image: "https://images.pexels.com/photos/25651531/pexels-photo-25651531.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+  },
+  {
+    name: "Dr. Samuel Adeyemi",
+    company: "MediConnect Health",
+    role: "Co-founder",
+    review: "From architecture to App Store launch, everything was handled professionally. They understood healthcare compliance and delivered ahead of schedule.",
+    rating: 5,
+    image: "https://images.pexels.com/photos/7752820/pexels-photo-7752820.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+  },
+  {
+    name: "Rachel Kim",
+    company: "EduSpark",
+    role: "CPO",
+    review: "A rare partner that combines strong engineering with real product thinking. They challenged our assumptions and the platform is better for it.",
+    rating: 5,
+    image: "https://images.pexels.com/photos/8312669/pexels-photo-8312669.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+  },
+];
+
+export type BlogPost = {
+  slug: string;
+  title: string;
+  excerpt: string;
+  category: string;
+  date: string;
+  readTime: string;
+  image: string;
+  author: string;
+  authorRole: string;
+  featured?: boolean;
+};
+
+export const blogPosts: BlogPost[] = [
+  {
+    slug: "react-performance-2026",
+    title: "React Performance in 2026: What Actually Moves the Needle",
+    excerpt: "Forget micro-optimizations. Here are the five techniques we use to keep client apps under 1.5s — from server components to smart code-splitting.",
+    category: "Web Development",
+    date: "Sep 8, 2026",
+    readTime: "8 min read",
+    image: "https://images.pexels.com/photos/34803990/pexels-photo-34803990.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+    author: "Muhammad Ali",
+    authorRole: "Senior Full Stack Developer",
+    featured: true,
+  },
+  {
+    slug: "llm-support-automation",
+    title: "We Automated 68% of Support Tickets with an LLM Copilot",
+    excerpt: "A practical case study: architecture, guardrails, evaluation and the mistakes we made wiring LLMs into a real support workflow.",
+    category: "AI",
+    date: "Aug 28, 2026",
+    readTime: "11 min read",
+    image: "https://images.pexels.com/photos/34804024/pexels-photo-34804024.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+    author: "Ayesha Khan",
+    authorRole: "Backend Engineer",
+    featured: true,
+  },
+  {
+    slug: "flutter-vs-react-native",
+    title: "Flutter vs React Native in 2026: An Honest Engineering Take",
+    excerpt: "We've shipped production apps with both. Here's how we help clients choose — performance, hiring, ecosystem and long-term cost.",
+    category: "Mobile Apps",
+    date: "Aug 15, 2026",
+    readTime: "9 min read",
+    image: "https://images.pexels.com/photos/17467937/pexels-photo-17467937.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+    author: "David Chen",
+    authorRole: "Mobile Lead",
+  },
+  {
+    slug: "api-security-checklist",
+    title: "The API Security Checklist We Run Before Every Launch",
+    excerpt: "Auth, rate limiting, input validation, secrets management — the 14-point checklist that keeps our clients out of breach headlines.",
+    category: "Cybersecurity",
+    date: "Jul 30, 2026",
+    readTime: "7 min read",
+    image: "https://images.pexels.com/photos/12969403/pexels-photo-12969403.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+    author: "James Carter",
+    authorRole: "Cloud Architect",
+  },
+  {
+    slug: "design-systems-that-scale",
+    title: "Design Systems That Survive Real Teams",
+    excerpt: "Tokens, governance, Figma-to-code pipelines — how we build design systems developers actually use instead of working around.",
+    category: "UI/UX",
+    date: "Jul 12, 2026",
+    readTime: "6 min read",
+    image: "https://images.pexels.com/photos/17279854/pexels-photo-17279854.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+    author: "Sarah Mitchell",
+    authorRole: "Head of Design",
+  },
+  {
+    slug: "typescript-strict-mode",
+    title: "Why We Ship Every Project in TypeScript Strict Mode",
+    excerpt: "Strict mode catches entire classes of bugs before they reach production. Here's our setup and how we onboard teams to it.",
+    category: "Programming",
+    date: "Jun 25, 2026",
+    readTime: "5 min read",
+    image: "https://images.pexels.com/photos/6986455/pexels-photo-6986455.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+    author: "Usman Tariq",
+    authorRole: "Frontend Developer",
+  },
+];
+
+export const blogCategories = ["All", "Web Development", "AI", "Mobile Apps", "Cybersecurity", "UI/UX", "Programming", "Software Trends"];
+
+export type Job = {
+  id: string;
+  title: string;
+  department: string;
+  location: string;
+  type: string;
+  experience: string;
+  skills: string[];
+  description: string;
+  responsibilities: string[];
+  posted: string;
+};
+
+export const jobs: Job[] = [
+  {
+    id: "web-dev-intern",
+    title: "Web Development Intern",
+    department: "Engineering",
+    location: "Lahore / Remote",
+    type: "Internship",
+    experience: "0–1 years",
+    skills: ["HTML", "CSS", "JavaScript", "React Basics"],
+    description: "A 3-month paid internship where you'll ship real features alongside senior engineers — with mentorship, code reviews and a path to full-time.",
+    responsibilities: ["Build UI components in React", "Fix bugs and write tests", "Participate in code reviews", "Learn Git & agile workflows"],
+    posted: "Sep 10, 2026",
+  },
+  {
+    id: "senior-react",
+    title: "Senior React Developer",
+    department: "Engineering",
+    location: "Remote",
+    type: "Full-Time",
+    experience: "4+ years",
+    skills: ["React", "TypeScript", "Node.js", "Testing"],
+    description: "Own frontend architecture for client platforms. You'll lead features end-to-end, mentor juniors and set the quality bar for the team.",
+    responsibilities: ["Architect scalable React apps", "Lead code reviews & pairing", "Drive performance budgets", "Collaborate with designers & PMs"],
+    posted: "Sep 5, 2026",
+  },
+  {
+    id: "flutter-dev",
+    title: "Flutter Developer",
+    department: "Mobile",
+    location: "Remote / On-site",
+    type: "Full-Time",
+    experience: "2+ years",
+    skills: ["Flutter", "Dart", "Firebase", "REST APIs"],
+    description: "Build polished cross-platform apps used by tens of thousands. You'll work across the full mobile lifecycle from prototype to store.",
+    responsibilities: ["Develop Flutter apps", "Integrate REST/GraphQL APIs", "Handle store releases", "Ensure 60fps performance"],
+    posted: "Aug 29, 2026",
+  },
+  {
+    id: "ui-ux-designer",
+    title: "UI/UX Designer",
+    department: "Design",
+    location: "Lahore / Hybrid",
+    type: "Full-Time",
+    experience: "3+ years",
+    skills: ["Figma", "Prototyping", "User Research", "Design Systems"],
+    description: "Design products people love. You'll run research, craft flows and hi-fi designs, and partner with engineers through to launch.",
+    responsibilities: ["Lead UX research sprints", "Design flows & hi-fi screens", "Maintain design systems", "Prototype & usability-test"],
+    posted: "Aug 20, 2026",
+  },
+  {
+    id: "python-backend",
+    title: "Python Backend Engineer",
+    department: "Engineering",
+    location: "Remote",
+    type: "Full-Time",
+    experience: "3+ years",
+    skills: ["Python", "FastAPI", "PostgreSQL", "Docker"],
+    description: "Build secure APIs and AI integrations. Ideal for someone who loves clean architecture, testing and shipping reliable systems.",
+    responsibilities: ["Design REST APIs", "Build AI integrations", "Write tests & docs", "Optimize queries & caching"],
+    posted: "Aug 12, 2026",
+  },
+  {
+    id: "project-manager",
+    title: "Technical Project Manager",
+    department: "Delivery",
+    location: "Remote",
+    type: "Contract",
+    experience: "3+ years",
+    skills: ["Agile", "Jira", "Client Communication", "Scrum"],
+    description: "Keep projects on track and clients delighted. You'll run sprints, manage scope and be the connective tissue of delivery.",
+    responsibilities: ["Run agile ceremonies", "Manage timelines & scope", "Client reporting", "Risk management"],
+    posted: "Aug 01, 2026",
+  },
+];
+
+export const processSteps = [
+  { n: "01", title: "Discover", icon: "Search", text: "We dig into your goals, users and constraints through workshops and research — so we solve the right problem." },
+  { n: "02", title: "Plan", icon: "Map", text: "Scope, milestones, tech stack and architecture. You get a transparent roadmap with fixed timelines." },
+  { n: "03", title: "Design", icon: "PenTool", text: "Wireframes to polished UI in Figma. You review clickable prototypes before a line of code is written." },
+  { n: "04", title: "Develop", icon: "Code2", text: "Agile sprints with weekly demos. Clean code, code reviews and CI/CD from day one." },
+  { n: "05", title: "Test", icon: "FlaskConical", text: "Automated + manual QA across devices. Security checks, performance budgets and UAT with your team." },
+  { n: "06", title: "Launch", icon: "Rocket", text: "Zero-drama deployment with monitoring, backups and rollback plans. We stay online through go-live." },
+  { n: "07", title: "Support", icon: "LifeBuoy", text: "Maintenance plans, analytics reviews and continuous improvement. We grow with you long-term." },
+];
+
+export const whyChooseUs = [
+  { icon: "Users", title: "Experienced Team", text: "Senior engineers & designers with 5+ years average experience across 50+ shipped projects." },
+  { icon: "Layers", title: "Modern Technologies", text: "React, Flutter, Node.js, Python & cloud-native tooling — always current, never legacy." },
+  { icon: "BadgeCheck", title: "Quality Assurance", text: "Dedicated QA on every project. Automated tests, manual passes and strict launch checklists." },
+  { icon: "Clock", title: "On-Time Delivery", text: "Transparent sprints, weekly demos and realistic estimates. 96% of projects ship on schedule." },
+  { icon: "ShieldCheck", title: "Secure Solutions", text: "OWASP-aligned practices, encrypted data, secure auth and regular vulnerability reviews." },
+  { icon: "HeartHandshake", title: "Long-Term Support", text: "Launch is day one. Monitoring, updates and a direct line to engineers who know your codebase." },
+];
+
+export const navLinks = [
+  { label: "Home", path: "/" },
+  { label: "About", path: "/about" },
+  { label: "Services", path: "/services" },
+  { label: "Portfolio", path: "/portfolio" },
+  { label: "Technologies", path: "/technologies" },
+  { label: "Team", path: "/team" },
+  { label: "Careers", path: "/careers" },
+  { label: "Blog", path: "/blog" },
+  { label: "Contact", path: "/contact" },
+];
