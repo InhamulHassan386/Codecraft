@@ -205,3 +205,102 @@ input:focus, select:focus, textarea:focus {
 }
 .section-eyebrow.on-dark { color: #7aa5ff; }
 .section-eyebrow.on-dark::before { background: #7aa5ff; }
+
+/* ================= CursorFX — advanced mouse experience ================= */
+.cursor-fx-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.cursor-fx-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 210;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  border-radius: 9999px;
+  mix-blend-mode: difference;
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform;
+  transition:
+    opacity 0.35s ease,
+    width 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    height 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+.cursor-fx-dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 211;
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: #fff;
+  mix-blend-mode: difference;
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform;
+  transition: opacity 0.35s ease;
+}
+.cursor-fx-label {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #fff;
+  white-space: nowrap;
+  opacity: 0;
+  transform: scale(0.5);
+  transition:
+    opacity 0.18s ease,
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cursor-fx-ring.is-label {
+  width: 82px;
+  height: 82px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-color: transparent;
+  mix-blend-mode: normal;
+  box-shadow: 0 10px 34px rgba(37, 99, 235, 0.45);
+}
+.cursor-fx-ring.is-label .cursor-fx-label {
+  opacity: 1;
+  transform: scale(1);
+}
+.has-cursor-fx,
+.has-cursor-fx * {
+  cursor: none !important;
+}
+.has-cursor-fx input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="reset"]),
+.has-cursor-fx textarea,
+.has-cursor-fx select {
+  cursor: auto !important;
+}
+@media (hover: none), (pointer: coarse) {
+  .cursor-fx-canvas,
+  .cursor-fx-ring,
+  .cursor-fx-dot {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cursor-fx-canvas,
+  .cursor-fx-ring,
+  .cursor-fx-dot {
+    display: none;
+  }
+}

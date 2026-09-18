@@ -369,7 +369,7 @@ function TechPreview() {
 const filters = ["All", "Web", "Mobile", "UI/UX", "Software", "E-Commerce"];
 export function ProjectCard({ p, large }: { p: (typeof projects)[number]; large?: boolean }) {
   return (
-    <div className="card-lift group overflow-hidden rounded-2xl border border-line bg-white shadow-card">
+    <div data-cursor="View" className="card-lift group overflow-hidden rounded-2xl border border-line bg-white shadow-card">
       <div className={cn("relative overflow-hidden", large ? "h-60 sm:h-72" : "h-52")}>
         <img src={p.image} alt={p.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
         <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/10 to-transparent" />
@@ -600,7 +600,7 @@ function Testimonials() {
 /* ================= BLOG PREVIEW ================= */
 export function BlogCard({ p }: { p: (typeof blogPosts)[number] }) {
   return (
-    <Link to="/blog" className="card-lift group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-card">
+    <Link to="/blog" data-cursor="Read" className="card-lift group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-card">
       <div className="relative h-48 overflow-hidden">
         <img src={p.image} alt={p.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
         <span className="absolute left-4 top-4 rounded-lg bg-brand px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white shadow-blue">{p.category}</span>

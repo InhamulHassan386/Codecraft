@@ -46,7 +46,7 @@ export default function BlogPage() {
         <section className="bg-white pb-4 pt-14">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <Reveal>
-              <button onClick={() => setReading(featured.slug)} className="group grid w-full overflow-hidden rounded-3xl border border-line bg-paper text-left shadow-card lg:grid-cols-2">
+              <button onClick={() => setReading(featured.slug)} data-cursor="Read" className="group grid w-full overflow-hidden rounded-3xl border border-line bg-paper text-left shadow-card lg:grid-cols-2">
                 <div className="relative h-64 overflow-hidden lg:h-full lg:min-h-[340px]">
                   <img src={featured.image} alt={featured.title} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
                   <span className="absolute left-5 top-5 rounded-lg bg-brand px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white">Featured · {featured.category}</span>
@@ -99,7 +99,7 @@ export default function BlogPage() {
             <motion.div layout className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {filtered.map((p) => (
                 <motion.div key={p.slug} layout initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-                  <div onClick={() => setReading(p.slug)} className="cursor-pointer">
+                  <div onClick={() => setReading(p.slug)} data-cursor="Read" className="cursor-pointer">
                     <BlogCard p={p} />
                   </div>
                 </motion.div>

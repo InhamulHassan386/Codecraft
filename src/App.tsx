@@ -1,6 +1,7 @@
 import { HashRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Navbar, Footer, QuoteProvider, ScrollToTop, BackToTop } from "./components/layout";
+import CursorFX from "./components/CursorFX";
 import Home from "./pages/Home";
 import About from "./pages/About";
 import ServicesPage from "./pages/Services";
@@ -51,6 +52,7 @@ export default function App() {
   return (
     <HashRouter>
       <QuoteProvider>
+        <CursorFX />
         <ScrollToTop />
         <AnimatedRoutes />
       </QuoteProvider>
