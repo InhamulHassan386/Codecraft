@@ -73,7 +73,7 @@ export function SectionHeading({
         <span className={cn("section-eyebrow", dark && "on-dark", align === "center" && "justify-center")}>{eyebrow}</span>
       </Reveal>
       <Reveal delay={0.08}>
-        <h2 className={cn("font-display mt-4 text-3xl font-extrabold tracking-tight text-balance sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]", dark ? "text-white" : "text-charcoal")}>
+        <h2 className={cn("font-display mt-3 text-3xl font-extrabold tracking-tight text-balance sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]", dark ? "text-white" : "text-charcoal")}>
           {title}
         </h2>
       </Reveal>
@@ -383,7 +383,7 @@ export function Footer() {
 /* ---------------- Page hero for inner pages ---------------- */
 export function PageHero({ eyebrow, title, sub, children }: { eyebrow: string; title: string; sub: string; children?: ReactNode }) {
   return (
-    <section className="relative overflow-hidden bg-ink pb-16 pt-14 sm:pb-20 sm:pt-20">
+    <section className="relative overflow-hidden bg-ink pb-16 pt-10 sm:pb-20 sm:pt-14">
       <div className="hero-glow pointer-events-none absolute inset-0" />
       <div className="bg-grid-dark pointer-events-none absolute inset-0" />
       <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-brand/20 blur-[120px]" />
@@ -391,7 +391,7 @@ export function PageHero({ eyebrow, title, sub, children }: { eyebrow: string; t
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
           <span className="section-eyebrow on-dark">{eyebrow}</span>
-          <h1 className="font-display mt-4 max-w-3xl text-4xl font-extrabold tracking-tight text-white text-balance sm:text-5xl">{title}</h1>
+          <h1 className="font-display mt-3 max-w-3xl text-4xl font-extrabold tracking-tight text-white text-balance sm:text-5xl">{title}</h1>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-300 sm:text-lg">{sub}</p>
           {children}
         </motion.div>

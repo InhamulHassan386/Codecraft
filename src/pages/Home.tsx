@@ -40,7 +40,7 @@ function Hero() {
         <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse-glow" />
       </div>
 
-      <div className="relative mx-auto max-w-7xl px-4 pb-16 pt-28 sm:px-6 sm:pt-32 lg:pb-24 lg:pt-40">
+      <div className="relative mx-auto max-w-7xl px-4 pb-16 pt-24 sm:px-6 sm:pt-28 lg:pb-24 lg:pt-32">
         <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8">
           {/* Copy */}
           <div>
