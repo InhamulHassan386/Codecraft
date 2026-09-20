@@ -625,7 +625,7 @@ export default function Admin() {
             <input placeholder="Search…" className="w-full rounded-xl border border-line bg-paper py-2.5 pl-10 pr-4 text-[13px]" />
           </div>
           <button className="relative ml-auto flex h-10 w-10 items-center justify-center rounded-xl border border-line md:ml-0" aria-label="Notifications">
-            <Bell className="h-4.5 w-4.5 h-5 w-5 text-charcoal" />
+            <Bell className="h-5 w-5 text-charcoal" />
             <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
           </button>
           <button className="flex items-center gap-2 rounded-xl border border-line py-1.5 pl-1.5 pr-3">

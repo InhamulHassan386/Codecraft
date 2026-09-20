@@ -395,7 +395,7 @@ export function ProjectCard({ p, large }: { p: Project; large?: boolean }) {
             ))}
           </div>
           <Link to={`/portfolio`} className="flex h-10 w-10 items-center justify-center rounded-xl bg-ink text-white transition group-hover:bg-brand">
-            <ArrowUpRight className="h-4.5 w-4.5 h-5 w-5" />
+            <ArrowUpRight className="h-5 w-5" />
           </Link>
         </div>
       </div>
