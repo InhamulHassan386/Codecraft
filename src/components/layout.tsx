@@ -6,7 +6,7 @@ import {
   Layout, Server, Database, Wrench, Search, Map, FlaskConical, Rocket, LifeBuoy,
   Users, Layers, BadgeCheck, Clock, HeartHandshake, Menu, X, ArrowRight,
   Mail, Phone, MapPin, ChevronRight, Star,
-  Check, Upload, Send, Calendar, CheckCircle2, Quote,
+  Check, Upload, Send, Calendar, CheckCircle2,
 } from "lucide-react";
 
 export function LinkedinIcon({ className }: { className?: string }) {
@@ -181,8 +181,6 @@ export function Navbar() {
 
   return (
     <>
-     
-
       <header
         className={cn(
             "fixed inset-x-0 top-0 z-50 transition-all duration-300",
@@ -610,8 +608,3 @@ export function BackToTop() {
   );
 }
 
-export function TestimonialStars() {
-  return null;
-}
-
-export { Quote };
