@@ -1,9 +1,10 @@
 import { Check } from "lucide-react";
 import { motion } from "framer-motion";
-import { techCategories } from "../data/content";
+import { useContent } from "../data/ContentContext";
 import { PageHero, Reveal, SectionHeading, DynIcon, CTASection } from "../components/layout";
 
 export default function Technologies() {
+  const { techCategories } = useContent();
   return (
     <>
       <PageHero

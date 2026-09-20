@@ -2,12 +2,15 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Phone, MapPin, Clock3, Send, CheckCircle2, MessageSquare } from "lucide-react";
 import { PageHero, Reveal, LinkedinIcon, GithubIcon, FacebookIcon, InstagramIcon } from "../components/layout";
+import { submitMessage } from "../data/api";
 
 const inputCls = "w-full rounded-xl border border-line bg-white px-4 py-3 text-sm text-charcoal placeholder:text-muted-2 transition";
 const labelCls = "mb-1.5 block text-[13px] font-semibold text-charcoal";
 
 export default function Contact() {
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState("");
 
   return (
     <>
@@ -69,33 +72,49 @@ export default function Contact() {
             <Reveal delay={0.08}>
               <div className="rounded-2xl border border-line bg-white p-6 shadow-card sm:p-9">
                 {!sent ? (
-                  <form onSubmit={(e) => { e.preventDefault(); setSent(true); }}>
+                  <form onSubmit={async (e) => {
+                    e.preventDefault();
+                    const fd = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>;
+                    setSending(true);
+                    setSendError("");
+                    try {
+                      await submitMessage(fd);
+                      setSent(true);
+                    } catch (err) {
+                      setSendError(err instanceof Error ? err.message : "Could not send — please try again.");
+                    } finally {
+                      setSending(false);
+                    }
+                  }}>
                     <h3 className="font-display text-2xl font-extrabold text-charcoal">Send us a message</h3>
                     <p className="mt-1.5 text-sm text-muted">Fields marked * are required. We never share your details.</p>
                     <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                      <div><label className={labelCls}>Full Name *</label><input required placeholder="John Smith" className={inputCls} /></div>
-                      <div><label className={labelCls}>Email *</label><input required type="email" placeholder="john@company.com" className={inputCls} /></div>
-                      <div><label className={labelCls}>Phone</label><input placeholder="+1 (555) 000-0000" className={inputCls} /></div>
-                      <div><label className={labelCls}>Company</label><input placeholder="Company Inc." className={inputCls} /></div>
+                      <div><label className={labelCls}>Full Name *</label><input required name="name" placeholder="John Smith" className={inputCls} /></div>
+                      <div><label className={labelCls}>Email *</label><input required type="email" name="email" placeholder="john@company.com" className={inputCls} /></div>
+                      <div><label className={labelCls}>Phone</label><input name="phone" placeholder="+1 (555) 000-0000" className={inputCls} /></div>
+                      <div><label className={labelCls}>Company</label><input name="company" placeholder="Company Inc." className={inputCls} /></div>
                       <div>
                         <label className={labelCls}>Service Needed *</label>
-                        <select required defaultValue="" className={inputCls}>
+                        <select required name="service" defaultValue="" className={inputCls}>
                           <option value="" disabled>Select a service</option>
                           {["Web Development", "Mobile App Development", "UI/UX Design", "Software Development", "E-Commerce Development", "AI & Automation", "Cloud Solutions", "Maintenance & Support", "Not sure yet"].map((s) => <option key={s}>{s}</option>)}
                         </select>
                       </div>
                       <div>
                         <label className={labelCls}>Budget</label>
-                        <select defaultValue="" className={inputCls}>
+                        <select name="budget" defaultValue="" className={inputCls}>
                           <option value="" disabled>Select budget</option>
                           <option>Under $5,000</option><option>$5,000 – $10,000</option><option>$10,000 – $25,000</option><option>$25,000 – $50,000</option><option>$50,000+</option>
                         </select>
                       </div>
-                      <div className="sm:col-span-2"><label className={labelCls}>Message *</label><textarea required rows={5} placeholder="Tell us about your goals, timeline, and what success looks like…" className={`${inputCls} resize-none`} /></div>
+                      <div className="sm:col-span-2"><label className={labelCls}>Message *</label><textarea required rows={5} name="message" placeholder="Tell us about your goals, timeline, and what success looks like…" className={`${inputCls} resize-none`} /></div>
                     </div>
-                    <button type="submit" className="btn-primary mt-6 flex w-full items-center justify-center gap-2 rounded-xl px-8 py-4 text-sm font-semibold sm:w-auto sm:px-12">
-                      Send Message <Send className="h-4 w-4" />
-                    </button>
+                    <div className="flex flex-col gap-2">
+                      {sendError && <p className="text-[12px] font-semibold text-red-500">{sendError}</p>}
+                      <button type="submit" disabled={sending} className="btn-primary mt-6 flex w-full items-center justify-center gap-2 rounded-xl px-8 py-4 text-sm font-semibold disabled:opacity-60 sm:w-auto sm:px-12">
+                        {sending ? "Sending…" : "Send Message"} <Send className="h-4 w-4" />
+                      </button>
+                    </div>
                   </form>
                 ) : (
                   <div className="py-12 text-center">

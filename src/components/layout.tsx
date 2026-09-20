@@ -34,7 +34,8 @@ export function XSocialIcon({ className }: { className?: string }) {
     <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true"><path d="M18.9 2H22l-6.77 7.74L23.2 22h-6.23l-4.88-6.38L6.5 22H3.34l7.24-8.28L1.6 2H8l4.41 5.83L18.9 2zm-1.1 18.1h1.72L7.28 3.8H5.44L17.8 20.1z" /></svg>
   );
 }
-import { navLinks } from "../data/content";
+import { useContent } from "../data/ContentContext";
+import { submitQuote } from "../data/api";
 import { cn } from "../utils/cn";
 
 /* ---------------- Icon map ---------------- */
@@ -73,7 +74,7 @@ export function SectionHeading({
         <span className={cn("section-eyebrow", dark && "on-dark", align === "center" && "justify-center")}>{eyebrow}</span>
       </Reveal>
       <Reveal delay={0.08}>
-        <h2 className={cn("font-display mt-4 text-3xl font-extrabold tracking-tight text-balance sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]", dark ? "text-white" : "text-charcoal")}>
+        <h2 className={cn("font-display mt-3 text-3xl font-extrabold tracking-tight text-balance sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]", dark ? "text-white" : "text-charcoal")}>
           {title}
         </h2>
       </Reveal>
@@ -160,6 +161,7 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { open } = useQuote();
+  const { navLinks } = useContent();
   const location = useLocation();
   
 
@@ -292,6 +294,7 @@ export function Navbar() {
 /* ---------------- Footer ---------------- */
 export function Footer() {
   const { open } = useQuote();
+  const { navLinks, services } = useContent();
   return (
     <footer className="relative overflow-hidden bg-ink text-slate-300">
       <div className="hero-glow pointer-events-none absolute inset-0" />
@@ -341,9 +344,9 @@ export function Footer() {
           <div>
             <h4 className="text-sm font-bold uppercase tracking-[0.14em] text-white">Services</h4>
             <ul className="mt-5 space-y-2.5">
-              {["Web Development", "Mobile Development", "UI/UX Design", "Software Development", "E-Commerce", "AI & Automation"].map((s) => (
-                <li key={s}>
-                  <Link to="/services" className="text-sm text-slate-400 transition hover:text-white hover:pl-1">{s}</Link>
+              {services.slice(0, 6).map((s) => (
+                <li key={s.slug}>
+                  <Link to="/services" className="text-sm text-slate-400 transition hover:text-white hover:pl-1">{s.title}</Link>
                 </li>
               ))}
             </ul>
@@ -383,7 +386,7 @@ export function Footer() {
 /* ---------------- Page hero for inner pages ---------------- */
 export function PageHero({ eyebrow, title, sub, children }: { eyebrow: string; title: string; sub: string; children?: ReactNode }) {
   return (
-    <section className="relative overflow-hidden bg-ink pb-16 pt-14 sm:pb-20 sm:pt-20">
+    <section className="relative overflow-hidden bg-ink pb-16 pt-10 sm:pb-20 sm:pt-14">
       <div className="hero-glow pointer-events-none absolute inset-0" />
       <div className="bg-grid-dark pointer-events-none absolute inset-0" />
       <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-brand/20 blur-[120px]" />
@@ -391,7 +394,7 @@ export function PageHero({ eyebrow, title, sub, children }: { eyebrow: string; t
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
           <span className="section-eyebrow on-dark">{eyebrow}</span>
-          <h1 className="font-display mt-4 max-w-3xl text-4xl font-extrabold tracking-tight text-white text-balance sm:text-5xl">{title}</h1>
+          <h1 className="font-display mt-3 max-w-3xl text-4xl font-extrabold tracking-tight text-white text-balance sm:text-5xl">{title}</h1>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-300 sm:text-lg">{sub}</p>
           {children}
         </motion.div>
@@ -463,6 +466,9 @@ function QuoteModal({ isOpen, onClose, presetService }: { isOpen: boolean; onClo
   const [sent, setSent] = useState(false);
   const [service, setService] = useState(presetService);
   const [fileName, setFileName] = useState("");
+  const { services } = useContent();
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState("");
 
   useEffect(() => { if (presetService) setService(presetService); }, [presetService, isOpen]);
   useEffect(() => {
@@ -501,15 +507,28 @@ function QuoteModal({ isOpen, onClose, presetService }: { isOpen: boolean; onClo
                 </div>
                 <form
                   className="grid gap-4 px-6 py-6 sm:grid-cols-2 sm:px-8 sm:py-7"
-                  onSubmit={(e) => { e.preventDefault(); setSent(true); }}
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    const fd = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>;
+                    setSending(true);
+                    setSendError("");
+                    try {
+                      await submitQuote({ ...fd, service });
+                      setSent(true);
+                    } catch (err) {
+                      setSendError(err instanceof Error ? err.message : "Could not send — please try again.");
+                    } finally {
+                      setSending(false);
+                    }
+                  }}
                 >
-                  <div><label className={labelCls}>Full Name *</label><input required placeholder="John Smith" className={inputCls} /></div>
-                  <div><label className={labelCls}>Email *</label><input required type="email" placeholder="john@company.com" className={inputCls} /></div>
-                  <div><label className={labelCls}>Phone</label><input placeholder="+1 (555) 000-0000" className={inputCls} /></div>
-                  <div><label className={labelCls}>Company</label><input placeholder="Company Inc." className={inputCls} /></div>
+                  <div><label className={labelCls}>Full Name *</label><input required name="name" placeholder="John Smith" className={inputCls} /></div>
+                  <div><label className={labelCls}>Email *</label><input required type="email" name="email" placeholder="john@company.com" className={inputCls} /></div>
+                  <div><label className={labelCls}>Phone</label><input name="phone" placeholder="+1 (555) 000-0000" className={inputCls} /></div>
+                  <div><label className={labelCls}>Company</label><input name="company" placeholder="Company Inc." className={inputCls} /></div>
                   <div>
                     <label className={labelCls}>Project Type *</label>
-                    <select required className={inputCls} defaultValue="">
+                    <select required className={inputCls} name="projectType" defaultValue="">
                       <option value="" disabled>Select project type</option>
                       <option>New Project</option><option>Redesign / Rebuild</option><option>Ongoing Support</option><option>Consulting</option>
                     </select>
@@ -518,28 +537,28 @@ function QuoteModal({ isOpen, onClose, presetService }: { isOpen: boolean; onClo
                     <label className={labelCls}>Required Service *</label>
                     <select required className={inputCls} value={service} onChange={(e) => setService(e.target.value)}>
                       <option value="" disabled>Select a service</option>
-                      {["Web Development", "Mobile App Development", "UI/UX Design", "Software Development", "E-Commerce Development", "AI & Automation", "Cloud Solutions", "Maintenance & Support"].map((s) => (
-                        <option key={s}>{s}</option>
+                      {services.map((s) => (
+                        <option key={s.slug}>{s.title}</option>
                       ))}
                     </select>
                   </div>
                   <div>
                     <label className={labelCls}>Budget *</label>
-                    <select required className={inputCls} defaultValue="">
+                    <select required className={inputCls} name="budget" defaultValue="">
                       <option value="" disabled>Select budget range</option>
                       <option>Under $5,000</option><option>$5,000 – $10,000</option><option>$10,000 – $25,000</option><option>$25,000 – $50,000</option><option>$50,000+</option>
                     </select>
                   </div>
                   <div>
                     <label className={labelCls}>Deadline</label>
-                    <select className={inputCls} defaultValue="">
+                    <select className={inputCls} name="deadline" defaultValue="">
                       <option value="" disabled>Select timeline</option>
                       <option>ASAP</option><option>1–2 months</option><option>3–6 months</option><option>Flexible</option>
                     </select>
                   </div>
                   <div className="sm:col-span-2">
                     <label className={labelCls}>Project Details *</label>
-                    <textarea required rows={4} placeholder="Describe your goals, features, timeline and anything else that helps us understand your project..." className={cn(inputCls, "resize-none")} />
+                    <textarea required rows={4} name="details" placeholder="Describe your goals, features, timeline and anything else that helps us understand your project..." className={cn(inputCls, "resize-none")} />
                   </div>
                   <div className="sm:col-span-2">
                     <label className={labelCls}>Attach Files <span className="font-normal text-muted">(brief, wireframes, docs — optional)</span></label>
@@ -551,9 +570,12 @@ function QuoteModal({ isOpen, onClose, presetService }: { isOpen: boolean; onClo
                   </div>
                   <div className="flex flex-col gap-3 sm:col-span-2 sm:flex-row sm:items-center sm:justify-between">
                     <p className="flex items-center gap-1.5 text-xs text-muted"><ShieldCheck className="h-4 w-4 text-emerald-500" /> Your information is confidential & NDA-protected.</p>
-                    <button type="submit" className="btn-primary flex items-center justify-center gap-2 rounded-xl px-8 py-3.5 text-sm font-semibold">
-                      Submit Request <Send className="h-4 w-4" />
-                    </button>
+                    <div className="flex flex-col items-end gap-2">
+                      {sendError && <p className="text-[12px] font-semibold text-red-500">{sendError}</p>}
+                      <button type="submit" disabled={sending} className="btn-primary flex items-center justify-center gap-2 rounded-xl px-8 py-3.5 text-sm font-semibold disabled:opacity-60">
+                        {sending ? "Sending…" : "Submit Request"} <Send className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 </form>
               </>

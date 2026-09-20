@@ -582,7 +582,8 @@ export const jobs: Job[] = [
   },
 ];
 
-export const processSteps = [
+export type ProcessStep = { n: string; title: string; icon: string; text: string };
+export const processSteps: ProcessStep[] = [
   { n: "01", title: "Discover", icon: "Search", text: "We dig into your goals, users and constraints through workshops and research — so we solve the right problem." },
   { n: "02", title: "Plan", icon: "Map", text: "Scope, milestones, tech stack and architecture. You get a transparent roadmap with fixed timelines." },
   { n: "03", title: "Design", icon: "PenTool", text: "Wireframes to polished UI in Figma. You review clickable prototypes before a line of code is written." },
@@ -592,7 +593,8 @@ export const processSteps = [
   { n: "07", title: "Support", icon: "LifeBuoy", text: "Maintenance plans, analytics reviews and continuous improvement. We grow with you long-term." },
 ];
 
-export const whyChooseUs = [
+export type WhyChooseUsItem = { icon: string; title: string; text: string };
+export const whyChooseUs: WhyChooseUsItem[] = [
   { icon: "Users", title: "Experienced Team", text: "Senior engineers & designers with 5+ years average experience across 50+ shipped projects." },
   { icon: "Layers", title: "Modern Technologies", text: "React, Flutter, Node.js, Python & cloud-native tooling — always current, never legacy." },
   { icon: "BadgeCheck", title: "Quality Assurance", text: "Dedicated QA on every project. Automated tests, manual passes and strict launch checklists." },

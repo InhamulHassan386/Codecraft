@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { ArrowRight, Check, ChevronDown } from "lucide-react";
-import { services, processSteps } from "../data/content";
+import { useContent } from "../data/ContentContext";
 import { PageHero, Reveal, SectionHeading, DynIcon, CTASection, useQuote } from "../components/layout";
 import { cn } from "../utils/cn";
 
 export default function ServicesPage() {
   const { openWithService } = useQuote();
-  const [expanded, setExpanded] = useState<string | null>(services[0].slug);
+  const { services, processSteps } = useContent();
+  const [expanded, setExpanded] = useState<string | null>(services[0]?.slug ?? null);
 
   return (
     <>

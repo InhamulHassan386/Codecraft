@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, MapPin, Clock3, Briefcase, Sparkles, CheckCircle2, X, Send, ChevronDown, Coffee, GraduationCap, HeartPulse, Globe2 } from "lucide-react";
-import { jobs, IMAGES } from "../data/content";
+import { IMAGES } from "../data/content";
+import { useContent } from "../data/ContentContext";
 import { PageHero, Reveal, SectionHeading, CTASection } from "../components/layout";
 import { cn } from "../utils/cn";
 
@@ -14,8 +15,9 @@ const perks = [
 
 export default function Careers() {
   const [dept, setDept] = useState("All");
-  const [expanded, setExpanded] = useState<string | null>(jobs[0].id);
-  const [applyJob, setApplyJob] = useState<string | null>(null);
+  const { jobs } = useContent();
+  const [expanded, setExpanded] = useState<string | number | null>(jobs[0]?.id ?? null);
+  const [applyJob, setApplyJob] = useState<string | number | null>(null);
   const [applied, setApplied] = useState(false);
 
   const depts = ["All", ...Array.from(new Set(jobs.map((j) => j.department)))];

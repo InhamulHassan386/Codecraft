@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, MapPin } from "lucide-react";
-import { team } from "../data/content";
+import { useContent } from "../data/ContentContext";
 import { PageHero, Reveal, SectionHeading, CTASection, LinkedinIcon, GithubIcon } from "../components/layout";
 
 export default function TeamPage() {
+  const { team } = useContent();
   return (
     <>
       <PageHero

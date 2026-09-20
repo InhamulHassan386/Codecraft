@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, ArrowUpRight, Calendar, User, Clock3 } from "lucide-react";
-import { projects } from "../data/content";
+import { useContent } from "../data/ContentContext";
 import { PageHero, Reveal, Counter, CTASection, useQuote } from "../components/layout";
 import { cn } from "../utils/cn";
 
@@ -11,6 +11,7 @@ export default function Portfolio() {
   const [filter, setFilter] = useState("All");
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const { open } = useQuote();
+  const { projects } = useContent();
   const list = filter === "All" ? projects : projects.filter((p) => p.category === filter);
   const active = projects.find((p) => p.slug === activeSlug);
 
@@ -66,6 +67,7 @@ export default function Portfolio() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.45 }}
                 className="group overflow-hidden rounded-2xl border border-line bg-white shadow-card transition hover:-translate-y-1.5 hover:shadow-card-hover"
+                data-cursor="View"
               >
                 <div className="relative h-64 overflow-hidden sm:h-72">
                   <img src={p.image} alt={p.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />

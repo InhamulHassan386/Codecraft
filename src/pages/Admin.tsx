@@ -1,52 +1,146 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, FolderKanban, Briefcase, Users, MessageSquare, FileText, PenLine,
-  Quote as QuoteIcon, Settings, Search, Bell, ChevronDown, Plus, Eye, Pencil, Trash2,
-  TrendingUp, ArrowUpRight, CheckCircle2, Clock3, XCircle, Menu, X, LogOut, Filter,
+  Quote as QuoteIcon, Settings, Search, Bell, ChevronDown, Plus, Pencil, Trash2, Loader2,
+  TrendingUp, ArrowUpRight, CheckCircle2, Clock3, Menu, X, LogOut, Filter,
+  Layers, Wrench,
 } from "lucide-react";
-import { projects, team, blogPosts, jobs, testimonials } from "../data/content";
 import { Counter } from "../components/layout";
 import { cn } from "../utils/cn";
+import { useContent, setToken as persistToken, getToken, type AdminMessage, type AdminQuote } from "../data/ContentContext";
+import { login as apiLogin, fetchMe, api } from "../data/api";
 
-type Tab = "dashboard" | "projects" | "services" | "team" | "testimonials" | "blog" | "careers" | "messages" | "quotes" | "settings";
+/* ============================================================================
+   Fully dynamic admin panel.
+   All content lives in MySQL (via server/) — every add / edit / delete here
+   instantly updates the whole website. Falls back to read-only demo data when
+   the API is unreachable.
+============================================================================ */
 
-const tabs: { id: Tab; label: string; icon: any; badge?: number }[] = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "projects", label: "Projects", icon: FolderKanban, badge: projects.length },
-  { id: "services", label: "Services", icon: Briefcase, badge: 8 },
-  { id: "team", label: "Team", icon: Users, badge: team.length },
-  { id: "testimonials", label: "Testimonials", icon: MessageSquare, badge: testimonials.length },
-  { id: "blog", label: "Blog", icon: PenLine, badge: blogPosts.length },
-  { id: "careers", label: "Careers", icon: FileText, badge: jobs.length },
-  { id: "messages", label: "Messages", icon: MessageSquare, badge: 12 },
-  { id: "quotes", label: "Quote Requests", icon: QuoteIcon, badge: 7 },
-  { id: "settings", label: "Settings", icon: Settings },
-];
+type AdminUser = { name: string; email: string; role: string };
+type Row = Record<string, any>;
 
-const mockMessages = [
-  { name: "Robert Hayes", email: "robert@techcorp.com", subject: "E-commerce rebuild inquiry", date: "Sep 14, 2026", status: "New", service: "E-Commerce" },
-  { name: "Lisa Wong", email: "lisa@startup.io", subject: "MVP development — fintech", date: "Sep 13, 2026", status: "Replied", service: "Web Development" },
-  { name: "Omar Farouk", email: "omar@retail.com", subject: "Mobile app for inventory", date: "Sep 12, 2026", status: "New", service: "Mobile Apps" },
-  { name: "Anna Petrova", email: "anna@healthplus.eu", subject: "Patient portal redesign", date: "Sep 11, 2026", status: "In Progress", service: "UI/UX Design" },
-  { name: "Carlos Mendez", email: "carlos@logistics.co", subject: "ERP integration support", date: "Sep 10, 2026", status: "Replied", service: "Software" },
-];
+type FieldType = "text" | "textarea" | "number" | "image" | "list" | "kv" | "items" | "toggle" | "select";
+type Field = { key: string; label: string; type: FieldType; options?: string[]; placeholder?: string; wide?: boolean };
 
-const mockQuotes = [
-  { name: "TechCorp Ltd.", contact: "Robert Hayes", service: "E-Commerce Development", budget: "$25k – $50k", date: "Sep 14, 2026", status: "Pending" },
-  { name: "Startup.io", contact: "Lisa Wong", service: "Web Development", budget: "$10k – $25k", date: "Sep 13, 2026", status: "Quoted" },
-  { name: "RetailMax", contact: "Omar Farouk", service: "Mobile App Development", budget: "$25k – $50k", date: "Sep 12, 2026", status: "Pending" },
-  { name: "HealthPlus", contact: "Anna Petrova", service: "UI/UX Design", budget: "$5k – $10k", date: "Sep 11, 2026", status: "Accepted" },
-  { name: "LogiCo", contact: "Carlos Mendez", service: "Software Development", budget: "$50k+", date: "Sep 10, 2026", status: "Quoted" },
-];
+type EntityKey = "projects" | "services" | "techCategories" | "team" | "testimonials" | "blogPosts" | "jobs";
 
-const mockApps = [
-  { name: "Jane Cooper", role: "Senior React Developer", date: "Sep 13, 2026", status: "Interview", exp: "5 yrs" },
-  { name: "Tom Baker", role: "Flutter Developer", date: "Sep 12, 2026", status: "New", exp: "3 yrs" },
-  { name: "Sara Ahmed", role: "UI/UX Designer", date: "Sep 11, 2026", status: "Shortlisted", exp: "4 yrs" },
-  { name: "Mike Ross", role: "Web Dev Intern", date: "Sep 10, 2026", status: "New", exp: "0 yrs" },
-];
+const ENTITY_CONFIG: Record<EntityKey, {
+  entity: string; title: string; sub: string; add: string;
+  titleKey: string; imageKey?: string; subLine: (r: Row) => string;
+  fields: Field[];
+}> = {
+  projects: {
+    entity: "projects", title: "Projects", sub: "Portfolio case studies shown on Home & Portfolio pages.", add: "Add Project",
+    titleKey: "name", imageKey: "image", subLine: (r) => `${r.category || "—"} · ${r.client || "—"} · ${r.year || "—"}`,
+    fields: [
+      { key: "name", label: "Project Name", type: "text" },
+      { key: "slug", label: "Slug (auto if empty)", type: "text", placeholder: "auto" },
+      { key: "category", label: "Category", type: "select", options: ["Web", "Mobile", "UI/UX", "Software", "E-Commerce"] },
+      { key: "client", label: "Client", type: "text" },
+      { key: "year", label: "Year", type: "text" },
+      { key: "duration", label: "Duration", type: "text", placeholder: "e.g. 12 weeks" },
+      { key: "image", label: "Image URL", type: "image", wide: true },
+      { key: "description", label: "Short Description", type: "textarea", wide: true },
+      { key: "longDescription", label: "Long Description (case study)", type: "textarea", wide: true },
+      { key: "technologies", label: "Technologies (one per line)", type: "list", wide: true },
+      { key: "results", label: "Results — one per line: value | label", type: "kv", wide: true, placeholder: "2.4x | Conversion rate" },
+    ],
+  },
+  services: {
+    entity: "services", title: "Services", sub: "Services displayed on Home, Services pages & footer.", add: "Add Service",
+    titleKey: "title", subLine: (r) => `${(r.features || []).length} features · ${(r.benefits || []).length} benefits`,
+    fields: [
+      { key: "title", label: "Title", type: "text" },
+      { key: "slug", label: "Slug (auto if empty)", type: "text" },
+      { key: "icon", label: "Icon (lucide name)", type: "text", placeholder: "Globe, Smartphone, Cloud…" },
+      { key: "tagline", label: "Tagline", type: "text", wide: true },
+      { key: "description", label: "Description", type: "textarea", wide: true },
+      { key: "features", label: "Features (one per line)", type: "list", wide: true },
+      { key: "benefits", label: "Benefits (one per line)", type: "list", wide: true },
+      { key: "technologies", label: "Technologies (one per line)", type: "list", wide: true },
+      { key: "deliverables", label: "Deliverables (one per line)", type: "list", wide: true },
+    ],
+  },
+  techCategories: {
+    entity: "techCategories", title: "Technology Categories", sub: "Tech stacks shown on Home & Technologies pages.", add: "Add Category",
+    titleKey: "title", subLine: (r) => `${(r.items || []).length} items`,
+    fields: [
+      { key: "title", label: "Category Title", type: "text" },
+      { key: "icon", label: "Icon (lucide name)", type: "text" },
+      { key: "blurb", label: "Blurb", type: "textarea", wide: true },
+      { key: "items", label: "Items — one per line: name | description | level 0-100", type: "items", wide: true, placeholder: "React | Our go-to UI library | 97" },
+    ],
+  },
+  team: {
+    entity: "team", title: "Team Members", sub: "Profiles shown on Team page, Home & About.", add: "Add Member",
+    titleKey: "name", imageKey: "image", subLine: (r) => `${r.role || "—"} · ${r.location || "—"}`,
+    fields: [
+      { key: "name", label: "Full Name", type: "text" },
+      { key: "role", label: "Role", type: "text" },
+      { key: "location", label: "Location", type: "text" },
+      { key: "image", label: "Photo URL", type: "image", wide: true },
+      { key: "bio", label: "Bio", type: "textarea", wide: true },
+      { key: "skills", label: "Skills (one per line)", type: "list", wide: true },
+    ],
+  },
+  testimonials: {
+    entity: "testimonials", title: "Testimonials", sub: "Client reviews rotating on the homepage.", add: "Add Testimonial",
+    titleKey: "name", imageKey: "image", subLine: (r) => `${r.role || "—"}, ${r.company || "—"} · ★ ${r.rating ?? 5}`,
+    fields: [
+      { key: "name", label: "Client Name", type: "text" },
+      { key: "company", label: "Company", type: "text" },
+      { key: "role", label: "Role", type: "text" },
+      { key: "rating", label: "Rating (1-5)", type: "number" },
+      { key: "image", label: "Photo URL", type: "image", wide: true },
+      { key: "review", label: "Review", type: "textarea", wide: true },
+    ],
+  },
+  blogPosts: {
+    entity: "blogPosts", title: "Blog Posts", sub: "Articles shown on Blog page & Home insights.", add: "New Post",
+    titleKey: "title", imageKey: "image", subLine: (r) => `${r.category || "—"} · ${r.date || "—"} · ${r.readTime || "—"}`,
+    fields: [
+      { key: "title", label: "Title", type: "text", wide: true },
+      { key: "slug", label: "Slug (auto if empty)", type: "text" },
+      { key: "category", label: "Category", type: "text" },
+      { key: "author", label: "Author", type: "text" },
+      { key: "authorRole", label: "Author Role", type: "text" },
+      { key: "date", label: "Date", type: "text", placeholder: "Sep 8, 2026" },
+      { key: "readTime", label: "Read Time", type: "text", placeholder: "8 min read" },
+      { key: "image", label: "Cover Image URL", type: "image", wide: true },
+      { key: "excerpt", label: "Excerpt", type: "textarea", wide: true },
+      { key: "featured", label: "Featured on homepage", type: "toggle" },
+    ],
+  },
+  jobs: {
+    entity: "jobs", title: "Open Positions", sub: "Job listings shown on the Careers page.", add: "Post a Job",
+    titleKey: "title", subLine: (r) => `${r.department || "—"} · ${r.location || "—"} · ${r.type || "—"}`,
+    fields: [
+      { key: "title", label: "Job Title", type: "text" },
+      { key: "slug", label: "Job ID / slug (auto if empty)", type: "text" },
+      { key: "department", label: "Department", type: "text" },
+      { key: "location", label: "Location", type: "text" },
+      { key: "type", label: "Type", type: "select", options: ["Full-Time", "Part-Time", "Contract", "Internship", "Remote"] },
+      { key: "experience", label: "Experience", type: "text", placeholder: "3+ years" },
+      { key: "posted", label: "Posted date", type: "text", placeholder: "Sep 10, 2026" },
+      { key: "description", label: "Description", type: "textarea", wide: true },
+      { key: "skills", label: "Skills (one per line)", type: "list", wide: true },
+      { key: "responsibilities", label: "Responsibilities (one per line)", type: "list", wide: true },
+    ],
+  },
+};
+
+const TAB_TO_ENTITY: Record<string, EntityKey> = {
+  projects: "projects",
+  services: "services",
+  tech: "techCategories",
+  team: "team",
+  testimonials: "testimonials",
+  blog: "blogPosts",
+  careers: "jobs",
+};
 
 const revenue = [42, 58, 45, 70, 62, 84, 76, 92, 88, 104, 98, 120];
 
@@ -66,49 +160,449 @@ function StatusPill({ s }: { s: string }) {
   return <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold", map[s] || "bg-slate-100 text-slate-600")}><span className="h-1.5 w-1.5 rounded-full bg-current" />{s}</span>;
 }
 
-function RowActions() {
+/* ------------------------------ value codecs ------------------------------ */
+function toFormValue(f: Field, v: any): string | boolean {
+  switch (f.type) {
+    case "toggle":
+      return Boolean(v);
+    case "number":
+      return v == null ? "" : String(v);
+    case "list":
+      return Array.isArray(v) ? v.join("\n") : "";
+    case "kv":
+      return Array.isArray(v) ? v.map((p: any) => `${p.value ?? p.label ?? ""} | ${p.label ?? ""}`).join("\n") : "";
+    case "items":
+      return Array.isArray(v) ? v.map((it: any) => `${it.name} | ${it.description} | ${it.level}`).join("\n") : "";
+    default:
+      return v == null ? "" : String(v);
+  }
+}
+function fromFormValue(f: Field, raw: string | boolean): any {
+  switch (f.type) {
+    case "toggle":
+      return Boolean(raw);
+    case "number":
+      return raw === "" ? 5 : Number(raw);
+    case "list":
+      return String(raw).split("\n").map((s) => s.trim()).filter(Boolean);
+    case "kv":
+      return String(raw).split("\n").map((l) => l.trim()).filter(Boolean).map((l) => {
+        const [value, label] = l.split("|").map((s) => s.trim());
+        return { value: value || "", label: label || value || "" };
+      });
+    case "items":
+      return String(raw).split("\n").map((l) => l.trim()).filter(Boolean).map((l) => {
+        const [name, description, level] = l.split("|").map((s) => s.trim());
+        return { name: name || "", description: description || "", level: Number(level) || 90 };
+      });
+    default:
+      return String(raw);
+  }
+}
+
+/* ------------------------------ form modal ------------------------------ */
+function ItemFormModal({ entityKey, initial, onClose, onSaved }: {
+  entityKey: EntityKey;
+  initial: Row | null;
+  onClose: () => void;
+  onSaved: (msg: string) => void;
+}) {
+  const cfg = ENTITY_CONFIG[entityKey];
+  const { createItem, updateItem } = useContent();
+  const [values, setValues] = useState<Record<string, string | boolean>>(() => {
+    const v: Record<string, string | boolean> = {};
+    for (const f of cfg.fields) v[f.key] = toFormValue(f, initial?.[f.key]);
+    return v;
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const set = (k: string, val: string | boolean) => setValues((p) => ({ ...p, [k]: val }));
+
+  const save = async () => {
+    setSaving(true);
+    setError("");
+    try {
+      const payload: Row = {};
+      for (const f of cfg.fields) payload[f.key] = fromFormValue(f, values[f.key]);
+      if (initial?.id) await updateItem(cfg.entity, initial.id, payload);
+      else await createItem(cfg.entity, payload);
+      onSaved(initial?.id ? `${cfg.title.slice(0, -1)} updated ✓` : `${cfg.title.slice(0, -1)} added ✓`);
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
-    <div className="flex justify-end gap-1.5">
-      <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-brand hover:text-brand" title="View"><Eye className="h-4 w-4" /></button>
-      <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-brand hover:text-brand" title="Edit"><Pencil className="h-4 w-4" /></button>
-      <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-red-400 hover:text-red-500" title="Delete"><Trash2 className="h-4 w-4" /></button>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[90] flex items-center justify-center bg-ink/60 p-4 backdrop-blur-sm" onClick={onClose}>
+      <motion.div
+        initial={{ opacity: 0, y: 24, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 12 }}
+        onClick={(e) => e.stopPropagation()}
+        className="flex max-h-[88vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
+      >
+        <div className="flex items-center justify-between border-b border-line px-6 py-4">
+          <div>
+            <h3 className="font-display text-lg font-extrabold">{initial?.id ? "Edit" : cfg.add}</h3>
+            <p className="text-[12px] text-muted">{cfg.title} · saved straight to the database</p>
+          </div>
+          <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-lg bg-paper text-charcoal transition hover:bg-paper-2"><X className="h-5 w-5" /></button>
+        </div>
+        <div className="grid gap-4 overflow-y-auto px-6 py-5 sm:grid-cols-2">
+          {cfg.fields.map((f) => {
+            const val = values[f.key];
+            const cls = "w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-sm text-charcoal placeholder:text-muted-2 transition focus:border-brand";
+            return (
+              <div key={f.key} className={f.wide ? "sm:col-span-2" : ""}>
+                <label className="mb-1.5 block text-[13px] font-semibold text-charcoal">{f.label}</label>
+                {f.type === "textarea" || f.type === "list" || f.type === "kv" || f.type === "items" ? (
+                  <textarea rows={f.type === "textarea" ? 3 : 4} value={String(val)} placeholder={f.placeholder} onChange={(e) => set(f.key, e.target.value)} className={cn(cls, "resize-none font-mono text-[12.5px] leading-relaxed")} />
+                ) : f.type === "toggle" ? (
+                  <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-line bg-paper px-4 py-2.5">
+                    <input type="checkbox" checked={Boolean(val)} onChange={(e) => set(f.key, e.target.checked)} className="h-4 w-4 accent-blue-600" />
+                    <span className="text-[13px] font-semibold text-charcoal">{val ? "Yes" : "No"}</span>
+                  </label>
+                ) : f.type === "select" ? (
+                  <select value={String(val)} onChange={(e) => set(f.key, e.target.value)} className={cls}>
+                    <option value="">Select…</option>
+                    {f.options?.map((o) => <option key={o}>{o}</option>)}
+                  </select>
+                ) : f.type === "image" ? (
+                  <div className="flex items-center gap-3">
+                    {val ? <img src={String(val)} alt="" className="h-12 w-16 shrink-0 rounded-lg border border-line object-cover" /> : <span className="flex h-12 w-16 shrink-0 items-center justify-center rounded-lg border border-dashed border-line text-muted"><Pencil className="h-4 w-4" /></span>}
+                    <input value={String(val)} placeholder="https://…" onChange={(e) => set(f.key, e.target.value)} className={cls} />
+                  </div>
+                ) : (
+                  <input
+                    type={f.type === "number" ? "number" : "text"}
+                    value={String(val)}
+                    placeholder={f.placeholder}
+                    onChange={(e) => set(f.key, e.target.value)}
+                    className={cls}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex items-center justify-between gap-3 border-t border-line bg-paper/60 px-6 py-4">
+          {error ? <p className="text-[12px] font-semibold text-red-500">{error}</p> : <p className="text-[12px] text-muted">Tip: lists are one item per line.</p>}
+          <div className="flex gap-2">
+            <button onClick={onClose} className="rounded-xl border border-line px-5 py-2.5 text-[13px] font-semibold text-charcoal transition hover:border-charcoal">Cancel</button>
+            <button onClick={save} disabled={saving} className="btn-primary flex items-center gap-2 rounded-xl px-6 py-2.5 text-[13px] font-semibold disabled:opacity-60">
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              {initial?.id ? "Save Changes" : "Create"}
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/* ------------------------------ entity table ------------------------------ */
+function EntityTable({ entityKey, onEdit, toast }: {
+  entityKey: EntityKey;
+  onEdit: (row: Row) => void;
+  toast: (msg: string) => void;
+}) {
+  const cfg = ENTITY_CONFIG[entityKey];
+  const content = useContent();
+  const items = (content as any)[cfg.entity] as Row[];
+  const { deleteItem, isDynamic } = content;
+  const [busyId, setBusyId] = useState<number | null>(null);
+
+  const del = async (row: Row) => {
+    if (!window.confirm(`Delete "${row[cfg.titleKey]}"? This is permanent.`)) return;
+    setBusyId(row.id);
+    try {
+      await deleteItem(cfg.entity, row.id);
+      toast("Deleted ✓");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Delete failed");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  return (
+    <TableCard title={cfg.title} sub={cfg.sub} action={cfg.add} onAction={() => onEdit({})} right={<Badge n={items.length} />} disabled={!isDynamic}>
+      {items.length === 0 && <p className="px-5 py-10 text-center text-sm text-muted">Nothing here yet — click "{cfg.add}" to create the first one.</p>}
+      {items.map((r) => (
+        <div key={r.id ?? r.slug} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
+          {cfg.imageKey ? (
+            <img src={r[cfg.imageKey]} alt={r[cfg.titleKey]} className="hidden h-12 w-16 rounded-lg object-cover sm:block" />
+          ) : (
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ink font-mono text-[12px] font-bold text-white">{String(r[cfg.titleKey] || "?").slice(0, 2).toUpperCase()}</span>
+          )}
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[14px] font-bold">{r[cfg.titleKey]}</span>
+            <span className="block truncate text-[12px] text-muted">{cfg.subLine(r)}</span>
+          </span>
+          <span className="hidden md:block"><StatusPill s="Live" /></span>
+          <div className="flex justify-end gap-1.5">
+            <button onClick={() => onEdit(r)} className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-brand hover:text-brand" title="Edit"><Pencil className="h-4 w-4" /></button>
+            <button onClick={() => del(r)} disabled={busyId === r.id} className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-red-400 hover:text-red-500 disabled:opacity-50" title="Delete">
+              {busyId === r.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
+      ))}
+    </TableCard>
+  );
+}
+
+function Badge({ n }: { n: number }) {
+  return <span className="rounded-full bg-paper-2 px-2.5 py-1 text-[11px] font-bold text-charcoal">{n} total</span>;
+}
+
+/* ------------------------------ inbox (messages/quotes) ------------------------------ */
+function Inbox({ kind, toast }: { kind: "messages" | "quotes"; toast: (m: string) => void }) {
+  const [rows, setRows] = useState<(AdminMessage | AdminQuote)[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { isDynamic } = useContent();
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      setRows((await api.list(kind)) as AdminMessage[]);
+    } catch {
+      setRows([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    if (isDynamic) load();
+    else setLoading(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDynamic]);
+
+  const setStatus = async (row: AdminMessage, status: string) => {
+    try {
+      await api.update(kind, row.id, { ...row, status });
+      toast(`Marked ${status} ✓`);
+      load();
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Update failed");
+    }
+  };
+  const del = async (row: AdminMessage) => {
+    if (!window.confirm("Delete this entry permanently?")) return;
+    try {
+      await api.remove(kind, row.id);
+      toast("Deleted ✓");
+      load();
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Delete failed");
+    }
+  };
+
+  const isMsg = kind === "messages";
+  const STATUSES = isMsg ? ["New", "In Progress", "Replied", "Accepted"] : ["Pending", "Quoted", "Accepted"];
+
+  return (
+    <TableCard
+      title={isMsg ? "Contact Messages" : "Quote Requests"}
+      sub={isMsg ? "Live inquiries from the contact form — stored in the database." : "Live leads from the Get-a-Quote system — stored in the database."}
+      action="Refresh"
+      onAction={load}
+    >
+      {loading && <p className="flex items-center justify-center gap-2 px-5 py-10 text-sm text-muted"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</p>}
+      {!loading && rows.length === 0 && <p className="px-5 py-10 text-center text-sm text-muted">No entries yet. Submissions from the website appear here instantly.</p>}
+      {rows.map((r) => (
+        <div key={r.id} className="gap-3 border-b border-line px-5 py-4 last:border-0 sm:flex sm:items-center">
+          <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[12px] font-bold text-white", isMsg ? "bg-brand-light !text-brand" : "bg-ink")}>
+            {(r.name || "?").split(" ").map((w) => w[0]).slice(0, 2).join("")}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[14px] font-bold">
+              {isMsg ? (r as AdminMessage).message?.slice(0, 60) || "—" : `${r.name} · ${r.company || "—"}`}
+              {!isMsg && null}
+            </span>
+            <span className="block truncate text-[12px] text-muted">
+              {r.name} · {r.email} · {r.service || "—"}{r.budget ? ` · ${r.budget}` : ""} · {r.date}
+            </span>
+          </span>
+          <span className="mt-2 flex items-center gap-2 sm:mt-0">
+            <span className="text-[11.5px] text-muted">{r.date}</span>
+            <select
+              value={r.status}
+              onChange={(e) => setStatus(r, e.target.value)}
+              className="rounded-lg border border-line bg-white px-2 py-1.5 text-[11.5px] font-bold text-charcoal"
+            >
+              {STATUSES.map((s) => <option key={s}>{s}</option>)}
+            </select>
+            <StatusPill s={r.status} />
+            <button onClick={() => del(r)} className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-red-400 hover:text-red-500" title="Delete"><Trash2 className="h-4 w-4" /></button>
+          </span>
+        </div>
+      ))}
+    </TableCard>
+  );
+}
+
+/* ------------------------------ shared UI ------------------------------ */
+function TableCard({ title, sub, action, onAction, children, right, disabled }: {
+  title: string; sub: string; action: string; onAction?: () => void; children: React.ReactNode; right?: React.ReactNode; disabled?: boolean;
+}) {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-card">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-5">
+        <div><h2 className="font-display text-lg font-extrabold">{title}</h2><p className="text-[13px] text-muted">{sub}</p></div>
+        <div className="flex items-center gap-2">
+          {right}
+          <button
+            onClick={onAction}
+            disabled={disabled}
+            title={disabled ? "API offline — start the server (npm run server) to enable editing" : undefined}
+            className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Plus className="h-4 w-4" /> {action}
+          </button>
+        </div>
+      </div>
+      <div className="border-t border-line">{children}</div>
+      <div className="flex items-center justify-between border-t border-line bg-paper/60 px-5 py-3 text-[12px] text-muted">
+        <span>Stored in {disabled ? "bundled demo data" : "MySQL database"}</span>
+        <span className="flex items-center gap-1.5"><Clock3 className="h-3.5 w-3.5" /> Live</span>
+      </div>
     </div>
   );
 }
 
+/* ------------------------------ login screen ------------------------------ */
+function LoginScreen({ onLogin }: { onLogin: (user: AdminUser, token: string) => void }) {
+  const [email, setEmail] = useState("admin@codecraftsolutions.com");
+  const [password, setPassword] = useState("password");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      const res = await apiLogin(email, password);
+      persistToken(res.token);
+      onLogin(res.user, res.token);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed — is the API server running? (npm run server)");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="flex min-h-[80vh] items-center justify-center bg-paper px-4 py-16">
+      <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md rounded-3xl border border-line bg-white p-8 shadow-card sm:p-10">
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-ink"><LayoutDashboard className="h-6 w-6 text-white" /></span>
+        <h1 className="font-display mt-5 text-center text-2xl font-extrabold text-charcoal">Admin Panel</h1>
+        <p className="mt-1.5 text-center text-sm text-muted">Sign in to manage website content from the database.</p>
+        <form className="mt-7 space-y-4" onSubmit={submit}>
+          <div><label className="mb-1.5 block text-[13px] font-semibold">Email</label><input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-xl border border-line px-4 py-3 text-sm" /></div>
+          <div><label className="mb-1.5 block text-[13px] font-semibold">Password</label><input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-xl border border-line px-4 py-3 text-sm" /></div>
+          {error && <p className="rounded-xl bg-red-50 px-4 py-3 text-[13px] font-semibold text-red-600">{error}</p>}
+          <button type="submit" disabled={busy} className="btn-primary flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold disabled:opacity-60">
+            {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+            Sign In to Dashboard
+          </button>
+        </form>
+        <p className="mt-5 flex items-center justify-center gap-1.5 text-center text-[12px] text-muted"><CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" /> Default login: admin@codecraftsolutions.com / password</p>
+      </motion.div>
+    </div>
+  );
+}
+
+/* ------------------------------ main ------------------------------ */
+type Tab = "dashboard" | "projects" | "services" | "tech" | "team" | "testimonials" | "blog" | "careers" | "messages" | "quotes" | "settings";
+
 export default function Admin() {
+  const content = useContent();
   const [tab, setTab] = useState<Tab>("dashboard");
   const [sidebar, setSidebar] = useState(false);
-  const [authed, setAuthed] = useState(false);
+  const [user, setUser] = useState<AdminUser | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [editing, setEditing] = useState<{ key: EntityKey; row: Row } | null>(null);
+  const [toastMsg, setToastMsg] = useState("");
+
+  // restore session
+  useEffect(() => {
+    const t = getToken();
+    if (!t) {
+      setAuthReady(true);
+      return;
+    }
+    fetchMe()
+      .then((r) => setUser(r.user))
+      .catch(() => persistToken(null))
+      .finally(() => setAuthReady(true));
+  }, []);
+
+  const toast = (m: string) => {
+    setToastMsg(m);
+    window.setTimeout(() => setToastMsg(""), 2600);
+  };
+
+  const counts: Record<string, number> = {
+    projects: content.projects.length,
+    services: content.services.length,
+    techCategories: content.techCategories.length,
+    team: content.team.length,
+    testimonials: content.testimonials.length,
+    blogPosts: content.blogPosts.length,
+    jobs: content.jobs.length,
+  };
+
+  const tabs: { id: Tab; label: string; icon: any; badge?: number }[] = [
+    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { id: "projects", label: "Projects", icon: FolderKanban, badge: counts.projects },
+    { id: "services", label: "Services", icon: Briefcase, badge: counts.services },
+    { id: "tech", label: "Technologies", icon: Wrench, badge: counts.techCategories },
+    { id: "team", label: "Team", icon: Users, badge: counts.team },
+    { id: "testimonials", label: "Testimonials", icon: MessageSquare, badge: counts.testimonials },
+    { id: "blog", label: "Blog", icon: PenLine, badge: counts.blogPosts },
+    { id: "careers", label: "Careers", icon: FileText, badge: counts.jobs },
+    { id: "messages", label: "Messages", icon: MessageSquare },
+    { id: "quotes", label: "Quote Requests", icon: QuoteIcon },
+    { id: "settings", label: "Settings", icon: Settings },
+  ];
 
   const stats = useMemo(() => [
-    { label: "Total Projects", value: 52, icon: FolderKanban, delta: "+4 this month", color: "bg-brand" },
-    { label: "Total Messages", value: 148, icon: MessageSquare, delta: "+12 unread", color: "bg-violet-500" },
-    { label: "Applications", value: 86, icon: FileText, delta: "+9 this week", color: "bg-amber-500" },
-    { label: "Blog Posts", value: blogPosts.length, icon: PenLine, delta: "2 drafts", color: "bg-emerald-500" },
-    { label: "Quote Requests", value: 34, icon: QuoteIcon, delta: "7 pending", color: "bg-rose-500" },
-  ], []);
+    { label: "Total Projects", value: counts.projects, icon: FolderKanban, delta: "live on website", color: "bg-brand" },
+    { label: "Services", value: counts.services, icon: Briefcase, delta: "live on website", color: "bg-violet-500" },
+    { label: "Team Members", value: counts.team, icon: Users, delta: "live on website", color: "bg-amber-500" },
+    { label: "Blog Posts", value: counts.blogPosts, icon: PenLine, delta: "live on website", color: "bg-emerald-500" },
+    { label: "Open Jobs", value: counts.jobs, icon: FileText, delta: "live on website", color: "bg-rose-500" },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [counts.projects, counts.services, counts.team, counts.blogPosts, counts.jobs]);
 
-  if (!authed) {
-    return (
-      <div className="flex min-h-[80vh] items-center justify-center bg-paper px-4 py-16">
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md rounded-3xl border border-line bg-white p-8 shadow-card sm:p-10">
-          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-ink"><LayoutDashboard className="h-6 w-6 text-white" /></span>
-          <h1 className="font-display mt-5 text-center text-2xl font-extrabold text-charcoal">Admin Panel</h1>
-          <p className="mt-1.5 text-center text-sm text-muted">Sign in to manage content, projects & inquiries. <span className="font-semibold">(Demo — any credentials work)</span></p>
-          <form className="mt-7 space-y-4" onSubmit={(e) => { e.preventDefault(); setAuthed(true); }}>
-            <div><label className="mb-1.5 block text-[13px] font-semibold">Email</label><input type="email" required defaultValue="admin@codecraftsolutions.com" className="w-full rounded-xl border border-line px-4 py-3 text-sm" /></div>
-            <div><label className="mb-1.5 block text-[13px] font-semibold">Password</label><input type="password" required defaultValue="password" className="w-full rounded-xl border border-line px-4 py-3 text-sm" /></div>
-            <button type="submit" className="btn-primary w-full rounded-xl px-6 py-3.5 text-sm font-semibold">Sign In to Dashboard</button>
-          </form>
-          <p className="mt-5 flex items-center justify-center gap-1.5 text-[12px] text-muted"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Secured with 2FA & audit logs in production</p>
-        </motion.div>
-      </div>
-    );
+  if (!authReady) {
+    return <div className="flex min-h-screen items-center justify-center bg-paper"><Loader2 className="h-6 w-6 animate-spin text-brand" /></div>;
   }
+
+  if (!user) {
+    return <LoginScreen onLogin={(u) => { setUser(u); setTab("dashboard"); }} />;
+  }
+
+  const logout = () => {
+    persistToken(null);
+    setUser(null);
+  };
 
   return (
     <div className="min-h-screen bg-paper">
+      {/* toast */}
+      <AnimatePresence>
+        {toastMsg && (
+          <motion.div initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="fixed left-1/2 top-5 z-[95] -translate-x-1/2 rounded-xl bg-ink px-5 py-3 text-[13px] font-bold text-white shadow-2xl">
+            {toastMsg}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* topbar */}
       <div className="sticky top-0 z-30 border-b border-line bg-white/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-3 px-4 sm:px-6">
@@ -117,25 +611,34 @@ export default function Admin() {
           </button>
           <div className="flex items-center gap-2.5">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-ink text-white font-mono text-[13px] font-bold">CC</span>
-            <span className="hidden sm:block"><span className="font-display block text-[14px] font-extrabold leading-none">CodeCraft Admin</span><span className="mt-0.5 block text-[11px] text-muted">Content Management System</span></span>
+            <span className="hidden sm:block"><span className="font-display block text-[14px] font-extrabold leading-none">CodeCraft Admin</span><span className="mt-0.5 block text-[11px] text-muted">MySQL Content Management</span></span>
           </div>
+          <span className={cn(
+            "ml-3 hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold md:flex",
+            content.isDynamic ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+          )}>
+            <span className={cn("h-1.5 w-1.5 rounded-full", content.isDynamic ? "bg-emerald-500" : "bg-amber-500")} />
+            {content.isDynamic ? "Database connected" : "API offline — read-only demo"}
+          </span>
           <div className="relative ml-auto hidden max-w-xs flex-1 md:block">
             <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-2" />
-            <input placeholder="Search projects, messages…" className="w-full rounded-xl border border-line bg-paper py-2.5 pl-10 pr-4 text-[13px]" />
+            <input placeholder="Search…" className="w-full rounded-xl border border-line bg-paper py-2.5 pl-10 pr-4 text-[13px]" />
           </div>
           <button className="relative ml-auto flex h-10 w-10 items-center justify-center rounded-xl border border-line md:ml-0" aria-label="Notifications">
             <Bell className="h-4.5 w-4.5 h-5 w-5 text-charcoal" />
             <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
           </button>
           <button className="flex items-center gap-2 rounded-xl border border-line py-1.5 pl-1.5 pr-3">
-            <img src={team[0].image} alt="Admin" className="h-7 w-7 rounded-lg object-cover" />
-            <span className="hidden text-left sm:block"><span className="block text-[12.5px] font-bold leading-none">Admin</span><span className="mt-0.5 block text-[10.5px] text-muted">Super Admin</span></span>
+            {content.team[0]?.image
+              ? <img src={content.team[0].image} alt="Admin" className="h-7 w-7 rounded-lg object-cover" />
+              : <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-ink text-[10px] font-bold text-white">{user.name.slice(0, 1)}</span>}
+            <span className="hidden text-left sm:block"><span className="block text-[12.5px] font-bold leading-none">{user.name}</span><span className="mt-0.5 block text-[10.5px] text-muted">{user.role}</span></span>
             <ChevronDown className="h-4 w-4 text-muted" />
           </button>
           <Link to="/" className="hidden h-10 items-center gap-1.5 rounded-xl border border-line px-4 text-[13px] font-semibold text-charcoal transition hover:border-brand hover:text-brand sm:flex">
             ← Website
           </Link>
-          <button onClick={() => setAuthed(false)} className="hidden h-10 items-center gap-1.5 rounded-xl bg-ink px-4 text-[13px] font-semibold text-white transition hover:bg-red-600 sm:flex">
+          <button onClick={logout} className="hidden h-10 items-center gap-1.5 rounded-xl bg-ink px-4 text-[13px] font-semibold text-white transition hover:bg-red-600 sm:flex">
             <LogOut className="h-4 w-4" /> Logout
           </button>
         </div>
@@ -144,7 +647,7 @@ export default function Admin() {
       <div className="mx-auto flex max-w-[1400px] gap-0 px-0 sm:px-6 sm:py-6 lg:gap-6">
         {/* sidebar */}
         <aside className={cn(
-          "fixed inset-y-0 left-0 z-40 w-64 -translate-x-full border-r border-line bg-white p-4 transition-transform lg:static lg:z-auto lg:w-60 lg:shrink-0 lg:translate-x-0 lg:rounded-2xl lg:border",
+          "fixed inset-y-0 left-0 z-40 w-64 -translate-x-full overflow-y-auto border-r border-line bg-white p-4 transition-transform lg:static lg:z-auto lg:w-60 lg:shrink-0 lg:translate-x-0 lg:rounded-2xl lg:border",
           sidebar && "translate-x-0"
         )}>
           <div className="flex items-center justify-between lg:hidden">
@@ -170,9 +673,8 @@ export default function Admin() {
             ))}
           </nav>
           <div className="mt-4 rounded-2xl bg-ink p-4">
-            <p className="text-[13px] font-bold text-white">Need help?</p>
-            <p className="mt-1 text-[12px] text-slate-400">Docs & video guides for every module.</p>
-            <button className="mt-3 w-full rounded-lg bg-brand py-2 text-[12.5px] font-bold text-white">View Docs</button>
+            <p className="text-[13px] font-bold text-white">Everything is live</p>
+            <p className="mt-1 text-[12px] text-slate-400">Add, edit or delete anything here — the website updates instantly.</p>
           </div>
         </aside>
         {sidebar && <div className="fixed inset-0 z-30 bg-ink/50 lg:hidden" onClick={() => setSidebar(false)} />}
@@ -185,14 +687,20 @@ export default function Admin() {
                 <div className="space-y-5">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <h1 className="font-display text-2xl font-extrabold text-charcoal">Good morning, Admin 👋</h1>
-                      <p className="text-sm text-muted">Here's what's happening across your website today.</p>
+                      <h1 className="font-display text-2xl font-extrabold text-charcoal">Welcome back, {user.name} 👋</h1>
+                      <p className="text-sm text-muted">Everything you change here goes live on the website instantly.</p>
                     </div>
                     <div className="flex gap-2">
-                      <button className="flex items-center gap-1.5 rounded-xl border border-line bg-white px-4 py-2.5 text-[13px] font-semibold"><Filter className="h-4 w-4" /> Last 30 days</button>
-                      <button className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> New Project</button>
+                      <button className="flex items-center gap-1.5 rounded-xl border border-line bg-white px-4 py-2.5 text-[13px] font-semibold"><Filter className="h-4 w-4" /> Live data</button>
+                      <button onClick={() => setTab("projects")} className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> New Project</button>
                     </div>
                   </div>
+
+                  {!content.isDynamic && (
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-[13px] font-semibold text-amber-700">
+                      API server is not reachable — showing bundled demo data (read-only). Start it with <code className="rounded bg-amber-100 px-1.5 py-0.5">npm run server</code> and refresh.
+                    </div>
+                  )}
 
                   <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
                     {stats.map((s) => (
@@ -205,10 +713,10 @@ export default function Admin() {
                     ))}
                   </div>
 
-                  <div className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
+                  <div className="grid gap-5 xl:grid-cols-2">
                     <div className="rounded-2xl border border-line bg-white p-6 shadow-card">
                       <div className="flex items-center justify-between">
-                        <div><h3 className="font-display text-[16px] font-bold">Revenue Overview</h3><p className="text-[12px] text-muted">Monthly billed revenue · 2026</p></div>
+                        <div><h3 className="font-display text-[16px] font-bold">Revenue Overview</h3><p className="text-[12px] text-muted">Demo analytics · 2026</p></div>
                         <span className="flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-[12px] font-bold text-emerald-600"><ArrowUpRight className="h-3.5 w-3.5" /> +24.6%</span>
                       </div>
                       <div className="mt-5 flex h-44 items-end gap-2">
@@ -225,182 +733,57 @@ export default function Admin() {
                       </div>
                     </div>
                     <div className="rounded-2xl border border-line bg-white p-6 shadow-card">
-                      <h3 className="font-display text-[16px] font-bold">Traffic Sources</h3>
-                      <p className="text-[12px] text-muted">Where quote requests come from</p>
+                      <h3 className="font-display text-[16px] font-bold">Content Overview</h3>
+                      <p className="text-[12px] text-muted">Everything stored in MySQL right now</p>
                       <div className="mt-4 space-y-3.5">
-                        {[
-                          { l: "Organic Search", v: 42, c: "bg-brand" },
-                          { l: "Referrals", v: 28, c: "bg-emerald-500" },
-                          { l: "Social Media", v: 18, c: "bg-violet-500" },
-                          { l: "Direct", v: 12, c: "bg-amber-500" },
-                        ].map((r) => (
+                        {([
+                          { l: "Projects", v: counts.projects, c: "bg-brand" },
+                          { l: "Services", v: counts.services, c: "bg-emerald-500" },
+                          { l: "Technology Categories", v: counts.techCategories, c: "bg-violet-500" },
+                          { l: "Testimonials", v: counts.testimonials, c: "bg-amber-500" },
+                        ] as const).map((r) => (
                           <div key={r.l}>
-                            <div className="flex justify-between text-[12.5px] font-semibold"><span>{r.l}</span><span>{r.v}%</span></div>
-                            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-paper"><motion.div initial={{ width: 0 }} animate={{ width: `${r.v}%` }} transition={{ duration: 0.8 }} className={cn("h-full rounded-full", r.c)} /></div>
+                            <div className="flex justify-between text-[12.5px] font-semibold"><span>{r.l}</span><span>{r.v}</span></div>
+                            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-paper">
+                              <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(100, (r.v / 10) * 100)}%` }} transition={{ duration: 0.8 }} className={cn("h-full rounded-full", r.c)} />
+                            </div>
                           </div>
                         ))}
                       </div>
-                      <div className="mt-5 rounded-xl bg-paper p-4 text-[12.5px]">
-                        <p className="font-bold">Top page: <span className="text-brand">/services</span></p>
-                        <p className="text-muted">8.2k views · 4.1% conversion to quote</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-5 xl:grid-cols-2">
-                    <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-card">
-                      <div className="flex items-center justify-between p-5 pb-3">
-                        <h3 className="font-display text-[16px] font-bold">Latest Quote Requests</h3>
-                        <button onClick={() => setTab("quotes")} className="text-[13px] font-bold text-brand">View all →</button>
-                      </div>
-                      <div className="divide-y divide-line">
-                        {mockQuotes.slice(0, 4).map((q) => (
-                          <div key={q.contact} className="flex items-center gap-3 px-5 py-3.5">
-                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ink text-[12px] font-bold text-white">{q.contact.split(" ").map((w) => w[0]).join("")}</span>
-                            <span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold">{q.name}</span><span className="block truncate text-[12px] text-muted">{q.service} · {q.budget}</span></span>
-                            <StatusPill s={q.status} />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-card">
-                      <div className="flex items-center justify-between p-5 pb-3">
-                        <h3 className="font-display text-[16px] font-bold">Recent Messages</h3>
-                        <button onClick={() => setTab("messages")} className="text-[13px] font-bold text-brand">View all →</button>
-                      </div>
-                      <div className="divide-y divide-line">
-                        {mockMessages.slice(0, 4).map((m) => (
-                          <div key={m.email} className="flex items-center gap-3 px-5 py-3.5">
-                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-light text-[12px] font-bold text-brand">{m.name.split(" ").map((w) => w[0]).join("")}</span>
-                            <span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold">{m.subject}</span><span className="block truncate text-[12px] text-muted">{m.name} · {m.date}</span></span>
-                            <StatusPill s={m.status} />
-                          </div>
-                        ))}
+                      <div className="mt-5 flex items-center gap-2 rounded-xl bg-paper p-4 text-[12.5px]">
+                        <Layers className="h-4 w-4 shrink-0 text-brand" />
+                        <p className="text-muted">All content is served to visitors from <span className="font-bold text-charcoal">GET /api/content</span></p>
                       </div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {tab === "projects" && (
-                <TableCard title="Projects" sub="Manage portfolio case studies shown on the website." action="Add Project">
-                  {projects.map((p) => (
-                    <div key={p.slug} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
-                      <img src={p.image} alt={p.name} className="hidden h-12 w-16 rounded-lg object-cover sm:block" />
-                      <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-bold">{p.name}</span><span className="block text-[12px] text-muted">{p.category} · {p.client} · {p.year}</span></span>
-                      <span className="hidden md:block"><StatusPill s="Live" /></span>
-                      <RowActions />
-                    </div>
-                  ))}
-                </TableCard>
-              )}
-
-              {tab === "services" && (
-                <TableCard title="Services" sub="Control the 8 services displayed across the site." action="Add Service">
-                  {["Web Development", "Mobile App Development", "UI/UX Design", "Software Development", "E-Commerce Development", "AI & Automation", "Cloud Solutions", "Maintenance & Support"].map((s, i) => (
-                    <div key={s} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ink font-mono text-[12px] font-bold text-white">{String(i + 1).padStart(2, "0")}</span>
-                      <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{s}</span><span className="block text-[12px] text-muted">8 features · visible on homepage</span></span>
-                      <span className="hidden md:block"><StatusPill s="Live" /></span>
-                      <RowActions />
-                    </div>
-                  ))}
-                </TableCard>
-              )}
-
-              {tab === "team" && (
-                <TableCard title="Team Members" sub="Manage profiles shown on Team page." action="Add Member">
-                  {team.map((m) => (
-                    <div key={m.name} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
-                      <img src={m.image} alt={m.name} className="h-11 w-11 rounded-xl object-cover" />
-                      <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{m.name}</span><span className="block truncate text-[12px] text-muted">{m.role} · {m.location}</span></span>
-                      <span className="hidden md:block"><StatusPill s="Live" /></span>
-                      <RowActions />
-                    </div>
-                  ))}
-                </TableCard>
-              )}
-
-              {tab === "testimonials" && (
-                <TableCard title="Testimonials" sub="Client reviews rotating on the homepage." action="Add Testimonial">
-                  {testimonials.map((t) => (
-                    <div key={t.name} className="gap-4 border-b border-line px-5 py-4 last:border-0 sm:flex sm:items-center">
-                      <img src={t.image} alt={t.name} className="h-11 w-11 shrink-0 rounded-xl object-cover" />
-                      <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{t.name} · {t.company}</span><span className="block truncate text-[12px] text-muted">"{t.review.slice(0, 80)}…"</span></span>
-                      <span className="mt-2 flex items-center gap-2 sm:mt-0"><span className="text-[12px] font-bold text-amber-500">★ {t.rating}.0</span><RowActions /></span>
-                    </div>
-                  ))}
-                </TableCard>
-              )}
-
-              {tab === "blog" && (
-                <TableCard title="Blog Posts" sub="Publish insights & manage categories." action="New Post">
-                  {blogPosts.map((p) => (
-                    <div key={p.slug} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
-                      <img src={p.image} alt={p.title} className="hidden h-12 w-16 rounded-lg object-cover sm:block" />
-                      <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-bold">{p.title}</span><span className="block text-[12px] text-muted">{p.category} · {p.date} · {p.readTime}</span></span>
-                      <span className="hidden md:block"><StatusPill s={p.featured ? "Live" : "Live"} /></span>
-                      <RowActions />
-                    </div>
-                  ))}
-                </TableCard>
+              {(["projects", "services", "tech", "team", "testimonials", "blog"] as const).map((t) =>
+                tab === t ? (
+                  <EntityTable
+                    key={t}
+                    entityKey={TAB_TO_ENTITY[t]}
+                    onEdit={(row) => setEditing({ key: TAB_TO_ENTITY[t], row })}
+                    toast={toast}
+                  />
+                ) : null
               )}
 
               {tab === "careers" && (
-                <div className="space-y-5">
-                  <TableCard title="Open Positions" sub={`${jobs.length} roles currently published.`} action="Post a Job">
-                    {jobs.map((j) => (
-                      <div key={j.id} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
-                        <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{j.title}</span><span className="block text-[12px] text-muted">{j.department} · {j.location} · {j.type}</span></span>
-                        <span className="hidden md:block"><StatusPill s="Live" /></span>
-                        <RowActions />
-                      </div>
-                    ))}
-                  </TableCard>
-                  <TableCard title="Job Applications" sub="Candidates waiting for review." action="Export CSV">
-                    {mockApps.map((a) => (
-                      <div key={a.name} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-light text-[12px] font-bold text-brand">{a.name.split(" ").map((w) => w[0]).join("")}</span>
-                        <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{a.name}</span><span className="block text-[12px] text-muted">{a.role} · {a.exp} · {a.date}</span></span>
-                        <StatusPill s={a.status} />
-                        <div className="hidden sm:block"><RowActions /></div>
-                      </div>
-                    ))}
-                  </TableCard>
-                </div>
+                <EntityTable entityKey={TAB_TO_ENTITY.careers} onEdit={(row) => setEditing({ key: TAB_TO_ENTITY.careers, row })} toast={toast} />
               )}
 
-              {tab === "messages" && (
-                <TableCard title="Contact Messages" sub="Inquiries from the contact form." action="Mark all read">
-                  {mockMessages.map((m) => (
-                    <div key={m.email} className="gap-3 border-b border-line px-5 py-4 last:border-0 sm:flex sm:items-center">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-light text-[12px] font-bold text-brand">{m.name.split(" ").map((w) => w[0]).join("")}</span>
-                      <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-bold">{m.subject}</span><span className="block truncate text-[12px] text-muted">{m.name} · {m.email} · {m.service}</span></span>
-                      <span className="mt-2 flex items-center gap-2 sm:mt-0"><span className="text-[11.5px] text-muted">{m.date}</span><StatusPill s={m.status} /><RowActions /></span>
-                    </div>
-                  ))}
-                </TableCard>
-              )}
-
-              {tab === "quotes" && (
-                <TableCard title="Quote Requests" sub="Leads from the Get-a-Quote system." action="Export leads">
-                  {mockQuotes.map((q) => (
-                    <div key={q.contact} className="gap-3 border-b border-line px-5 py-4 last:border-0 sm:flex sm:items-center">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ink text-[12px] font-bold text-white">{q.contact.split(" ").map((w) => w[0]).join("")}</span>
-                      <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{q.name} <span className="font-normal text-muted">· {q.contact}</span></span><span className="block text-[12px] text-muted">{q.service} · Budget {q.budget}</span></span>
-                      <span className="mt-2 flex items-center gap-2 sm:mt-0"><span className="text-[11.5px] text-muted">{q.date}</span><StatusPill s={q.status} /><RowActions /></span>
-                    </div>
-                  ))}
-                </TableCard>
-              )}
+              {tab === "messages" && <Inbox kind="messages" toast={toast} />}
+              {tab === "quotes" && <Inbox kind="quotes" toast={toast} />}
 
               {tab === "settings" && (
                 <div className="grid gap-5 lg:grid-cols-2">
                   {[
-                    { t: "General Settings", d: "Site name, tagline, logo & contact details.", rows: [["Site name", "CodeCraft Solutions"], ["Support email", "support@codecraftsolutions.com"], ["Phone", "+1 (555) 012-3456"]] },
-                    { t: "SEO & Analytics", d: "Meta defaults, sitemap & tracking.", rows: [["Meta title", "CodeCraft Solutions — Software House"], ["Analytics", "Connected ✓"], ["Sitemap", "Auto-generated"]] },
-                    { t: "Notifications", d: "Email alerts for new leads & messages.", rows: [["Quote alerts", "Enabled"], ["Message alerts", "Enabled"], ["Weekly digest", "Mondays 9am"]] },
-                    { t: "Team Access", d: "Roles & permissions for admins.", rows: [["Admins", "3 users"], ["Editors", "5 users"], ["2FA enforced", "Yes"]] },
+                    { t: "Database", d: "MySQL connection used by this panel.", rows: [["Engine", content.isDynamic ? "MySQL (live)" : "File store / offline"], ["API", "/api/content"], ["Tables", "12 content tables + admin_users"]] },
+                    { t: "Admin Account", d: "Signed-in administrator.", rows: [["Name", user.name], ["Email", user.email], ["Role", user.role]] },
+                    { t: "Security", d: "Auth configuration.", rows: [["Passwords", "bcrypt hashed"], ["Sessions", "JWT · 7 days"], ["Default password", "Change via ADMIN_PASSWORD env"]] },
+                    { t: "Deployment", d: "How to run the full stack.", rows: [["API server", "npm run server (port 3001)"], ["Website", "npm run dev (port 5173)"], ["Production", "npm run build → single dist/index.html + API"]] },
                   ].map((c) => (
                     <div key={c.t} className="rounded-2xl border border-line bg-white p-6 shadow-card">
                       <h3 className="font-display text-[16px] font-bold">{c.t}</h3>
@@ -412,7 +795,6 @@ export default function Admin() {
                           </div>
                         ))}
                       </div>
-                      <button className="mt-4 w-full rounded-xl border border-line py-2.5 text-[13px] font-bold transition hover:border-brand hover:text-brand">Edit {c.t}</button>
                     </div>
                   ))}
                 </div>
@@ -421,29 +803,18 @@ export default function Admin() {
           </AnimatePresence>
         </main>
       </div>
+
+      {/* edit / create modal */}
+      <AnimatePresence>
+        {editing && (
+          <ItemFormModal
+            entityKey={editing.key}
+            initial={editing.row?.id ? editing.row : null}
+            onClose={() => setEditing(null)}
+            onSaved={toast}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
-}
-
-function TableCard({ title, sub, action, children }: { title: string; sub: string; action: string; children: React.ReactNode }) {
-  return (
-    <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-card">
-      <div className="flex flex-wrap items-center justify-between gap-3 p-5">
-        <div><h2 className="font-display text-lg font-extrabold">{title}</h2><p className="text-[13px] text-muted">{sub}</p></div>
-        <div className="flex gap-2">
-          <button className="flex items-center gap-1.5 rounded-xl border border-line px-4 py-2.5 text-[13px] font-semibold"><Search className="h-4 w-4" /> Search</button>
-          <button className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> {action}</button>
-        </div>
-      </div>
-      <div className="border-t border-line">{children}</div>
-      <div className="flex items-center justify-between border-t border-line bg-paper/60 px-5 py-3 text-[12px] text-muted">
-        <span>Showing all items</span>
-        <span className="flex items-center gap-1.5"><Clock3 className="h-3.5 w-3.5" /> Last synced just now</span>
-      </div>
-    </div>
-  );
-}
-
-export function AdminIcons() {
-  return <span className="hidden"><XCircle /><CheckCircle2 /></span>;
 }

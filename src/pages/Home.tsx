@@ -5,7 +5,8 @@ import {
   ArrowRight, ArrowUpRight, Check, ChevronLeft, ChevronRight, Cloud, Code2,
   FolderKanban, Play, Quote, ShieldCheck, Star, Terminal, Zap, Globe, Smartphone, Database, Wrench, Layout, Server,
 } from "lucide-react";
-import { services, projects, techCategories, team, testimonials, blogPosts, processSteps, whyChooseUs, IMAGES } from "../data/content";
+import { IMAGES, type Project, type TeamMember, type BlogPost, type ProcessStep } from "../data/content";
+import { useContent } from "../data/ContentContext";
 import { Reveal, SectionHeading, Counter, DynIcon, Stars, CTASection, useQuote } from "../components/layout";
 import { cn } from "../utils/cn";
 
@@ -40,7 +41,7 @@ function Hero() {
         <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse-glow" />
       </div>
 
-      <div className="relative mx-auto max-w-7xl px-4 pb-16 pt-28 sm:px-6 sm:pt-32 lg:pb-24 lg:pt-40">
+      <div className="relative mx-auto max-w-7xl px-4 pb-16 pt-24 sm:px-6 sm:pt-28 lg:pb-24 lg:pt-32">
         <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8">
           {/* Copy */}
           <div>
@@ -225,6 +226,7 @@ function Stats() {
 /* ================= SERVICES ================= */
 function Services() {
   const { openWithService } = useQuote();
+  const { services } = useContent();
   return (
     <section className="bg-paper py-20 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
@@ -259,6 +261,7 @@ function Services() {
 /* ================= WHY CHOOSE US ================= */
 function WhyChoose() {
   const { open } = useQuote();
+  const { whyChooseUs } = useContent();
   return (
     <section className="relative overflow-hidden bg-ink py-20 sm:py-24">
       <div className="hero-glow pointer-events-none absolute inset-0" />
@@ -305,6 +308,7 @@ function WhyChoose() {
 /* ================= TECHNOLOGIES PREVIEW ================= */
 function TechPreview() {
   const [active, setActive] = useState(0);
+  const { techCategories } = useContent();
   const catIcons = [Layout, Server, Smartphone, Database, Wrench];
   return (
     <section className="bg-white py-20 sm:py-24">
@@ -367,9 +371,9 @@ function TechPreview() {
 
 /* ================= FEATURED WORK ================= */
 const filters = ["All", "Web", "Mobile", "UI/UX", "Software", "E-Commerce"];
-export function ProjectCard({ p, large }: { p: (typeof projects)[number]; large?: boolean }) {
+export function ProjectCard({ p, large }: { p: Project; large?: boolean }) {
   return (
-    <div className="card-lift group overflow-hidden rounded-2xl border border-line bg-white shadow-card">
+    <div data-cursor="View" className="card-lift group overflow-hidden rounded-2xl border border-line bg-white shadow-card">
       <div className={cn("relative overflow-hidden", large ? "h-60 sm:h-72" : "h-52")}>
         <img src={p.image} alt={p.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
         <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/10 to-transparent" />
@@ -401,6 +405,7 @@ export function ProjectCard({ p, large }: { p: (typeof projects)[number]; large?
 
 function FeaturedWork() {
   const [filter, setFilter] = useState("All");
+  const { projects } = useContent();
   const list = (filter === "All" ? projects : projects.filter((p) => p.category === filter)).slice(0, 3);
   return (
     <section className="bg-paper py-20 sm:py-24">
@@ -441,6 +446,7 @@ function FeaturedWork() {
 
 /* ================= PROCESS ================= */
 function Process() {
+  const { processSteps } = useContent();
   return (
     <section className="relative overflow-hidden bg-white py-20 sm:py-24">
       <div className="bg-grid-light pointer-events-none absolute inset-0 opacity-60" />
@@ -484,7 +490,7 @@ function Process() {
     </section>
   );
 }
-function StepBody({ s }: { s: (typeof processSteps)[number] }) {
+function StepBody({ s }: { s: ProcessStep }) {
   return (
     <>
       <div className="flex items-center gap-3">
@@ -497,7 +503,7 @@ function StepBody({ s }: { s: (typeof processSteps)[number] }) {
 }
 
 /* ================= TEAM PREVIEW ================= */
-export function TeamCard({ m }: { m: (typeof team)[number] }) {
+export function TeamCard({ m }: { m: TeamMember }) {
   return (
     <div className="card-lift group overflow-hidden rounded-2xl border border-line bg-white shadow-card">
       <div className="relative h-64 overflow-hidden bg-paper">
@@ -518,6 +524,7 @@ export function TeamCard({ m }: { m: (typeof team)[number] }) {
 }
 
 function TeamPreview() {
+  const { team } = useContent();
   return (
     <section className="bg-paper py-20 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
@@ -541,6 +548,7 @@ function TeamPreview() {
 function Testimonials() {
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
+  const { testimonials } = useContent();
   useEffect(() => {
     if (paused) return;
     const t = setInterval(() => setIdx((p) => (p + 1) % testimonials.length), 5000);
@@ -598,9 +606,9 @@ function Testimonials() {
 }
 
 /* ================= BLOG PREVIEW ================= */
-export function BlogCard({ p }: { p: (typeof blogPosts)[number] }) {
+export function BlogCard({ p }: { p: BlogPost }) {
   return (
-    <Link to="/blog" className="card-lift group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-card">
+    <Link to="/blog" data-cursor="Read" className="card-lift group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-card">
       <div className="relative h-48 overflow-hidden">
         <img src={p.image} alt={p.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
         <span className="absolute left-4 top-4 rounded-lg bg-brand px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white shadow-blue">{p.category}</span>
@@ -618,6 +626,7 @@ export function BlogCard({ p }: { p: (typeof blogPosts)[number] }) {
 }
 
 function BlogPreview() {
+  const { blogPosts } = useContent();
   return (
     <section className="bg-paper py-20 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">

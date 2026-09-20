@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Target, Eye, Heart, Award, Users, Zap, Check, Quote } from "lucide-react";
-import { IMAGES, whyChooseUs, team } from "../data/content";
+import { IMAGES } from "../data/content";
+import { useContent } from "../data/ContentContext";
 import { PageHero, Reveal, SectionHeading, Counter, CTASection, useQuote, Stars, DynIcon } from "../components/layout";
 
 const values = [
@@ -21,6 +22,7 @@ const journey = [
 
 export default function About() {
   const { open } = useQuote();
+  const { whyChooseUs, team } = useContent();
   return (
     <>
       <PageHero
