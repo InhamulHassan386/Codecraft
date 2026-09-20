@@ -189,22 +189,13 @@ input:focus, select:focus, textarea:focus {
 .section-eyebrow {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-brand);
 }
-.section-eyebrow::before {
-  content: "";
-  width: 26px;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--color-brand);
-}
 .section-eyebrow.on-dark { color: #7aa5ff; }
-.section-eyebrow.on-dark::before { background: #7aa5ff; }
 
 /* ================= CursorFX — advanced mouse experience ================= */
 .cursor-fx-canvas {
