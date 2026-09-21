@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-/* Mouse animation layer — runs alongside <CustomCursor /> and adds three effects:
+/* Mouse animation layer — adds three effects around the native pointer:
  *
  *   1. Sparkle trail  — twinkling stars scattered along the pointer path,
  *      drifting up and fading out.
@@ -10,7 +10,7 @@ import { useEffect, useRef } from "react";
  *
  * Everything animates with the Web Animations API and self-cleans, so there is
  * no per-frame bookkeeping. Disabled entirely for touch devices and for
- * prefers-reduced-motion, same as <CustomCursor />. */
+ * prefers-reduced-motion. */
 
 const SPARK_STEP = 26;        // px of pointer travel between trail sparkles
 const SPARK_MAX = 48;         // live particle cap
