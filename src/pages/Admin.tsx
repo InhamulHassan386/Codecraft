@@ -6,22 +6,31 @@ import {
   Quote as QuoteIcon, Settings, Search, Bell, ChevronDown, Plus, Eye, Pencil, Trash2,
   TrendingUp, ArrowUpRight, CheckCircle2, Clock3, XCircle, Menu, X, LogOut, Filter,
 } from "lucide-react";
-import { projects, team, blogPosts as seedBlogPosts, jobs, testimonials } from "../data/content";
+import { projects as seedProjects, team as seedTeam, blogPosts as seedBlogPosts, jobs as seedJobs, testimonials as seedTestimonials } from "../data/content";
 import { deleteBlogPost, getBlogPosts } from "../data/blogApi";
 import type { BlogPost } from "../data/content";
 import { Counter } from "../components/layout";
 import { cn } from "../utils/cn";
 
+type Persistable = Record<string, unknown>;
+function usePersistentState<T extends Persistable>(key: string, initial: T[]) {
+  const [items, setItems] = useState<T[]>(() => {
+    try { return JSON.parse(localStorage.getItem(`codecraft:${key}`) || "null") || initial; } catch { return initial; }
+  });
+  useEffect(() => { localStorage.setItem(`codecraft:${key}`, JSON.stringify(items)); }, [key, items]);
+  return [items, setItems] as const;
+}
+
 type Tab = "dashboard" | "projects" | "services" | "team" | "testimonials" | "blog" | "careers" | "messages" | "quotes" | "settings";
 
 const tabs: { id: Tab; label: string; icon: any; badge?: number }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "projects", label: "Projects", icon: FolderKanban, badge: projects.length },
+  { id: "projects", label: "Projects", icon: FolderKanban, badge: seedProjects.length },
   { id: "services", label: "Services", icon: Briefcase, badge: 8 },
-  { id: "team", label: "Team", icon: Users, badge: team.length },
-  { id: "testimonials", label: "Testimonials", icon: MessageSquare, badge: testimonials.length },
+  { id: "team", label: "Team", icon: Users, badge: seedTeam.length },
+  { id: "testimonials", label: "Testimonials", icon: MessageSquare, badge: seedTestimonials.length },
   { id: "blog", label: "Blog", icon: PenLine, badge: seedBlogPosts.length },
-  { id: "careers", label: "Careers", icon: FileText, badge: jobs.length },
+  { id: "careers", label: "Careers", icon: FileText, badge: seedJobs.length },
   { id: "messages", label: "Messages", icon: MessageSquare, badge: 12 },
   { id: "quotes", label: "Quote Requests", icon: QuoteIcon, badge: 7 },
   { id: "settings", label: "Settings", icon: Settings },
@@ -85,6 +94,10 @@ export default function Admin() {
   const [authed, setAuthed] = useState(false);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [blogError, setBlogError] = useState("");
+  const [adminProjects, setAdminProjects] = usePersistentState("projects", seedProjects);
+  const [adminTeam, setAdminTeam] = usePersistentState("team", seedTeam);
+  const [adminTestimonials, setAdminTestimonials] = usePersistentState("testimonials", seedTestimonials);
+  const [adminJobs, setAdminJobs] = usePersistentState("jobs", seedJobs);
 
   useEffect(() => {
     getBlogPosts().then(setBlogPosts).catch(() => setBlogError("Could not load blog posts"));
@@ -96,7 +109,7 @@ export default function Admin() {
     { label: "Applications", value: 86, icon: FileText, delta: "+9 this week", color: "bg-amber-500" },
     { label: "Blog Posts", value: blogPosts.length, icon: PenLine, delta: "2 drafts", color: "bg-emerald-500" },
     { label: "Quote Requests", value: 34, icon: QuoteIcon, delta: "7 pending", color: "bg-rose-500" },
-  ], []);
+  ], [blogPosts.length]);
 
   if (!authed) {
     return (
@@ -137,7 +150,7 @@ export default function Admin() {
             <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
           </button>
           <button className="flex items-center gap-2 rounded-xl border border-line py-1.5 pl-1.5 pr-3">
-            <img src={team[0].image} alt="Admin" className="h-7 w-7 rounded-lg object-cover" />
+            <img src={adminTeam[0]?.image || seedTeam[0].image} alt="Admin" className="h-7 w-7 rounded-lg object-cover" />
             <span className="hidden text-left sm:block"><span className="block text-[12.5px] font-bold leading-none">Admin</span><span className="mt-0.5 block text-[10.5px] text-muted">Super Admin</span></span>
             <ChevronDown className="h-4 w-4 text-muted" />
           </button>
@@ -293,12 +306,12 @@ export default function Admin() {
 
               {tab === "projects" && (
                 <TableCard title="Projects" sub="Manage portfolio case studies shown on the website." action="Add Project">
-                  {projects.map((p) => (
+                  {adminProjects.map((p) => (
                     <div key={p.slug} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
                       <img src={p.image} alt={p.name} className="hidden h-12 w-16 rounded-lg object-cover sm:block" />
                       <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-bold">{p.name}</span><span className="block text-[12px] text-muted">{p.category} · {p.client} · {p.year}</span></span>
                       <span className="hidden md:block"><StatusPill s="Live" /></span>
-                      <RowActions />
+                      <RowActions label={p.name} onDelete={() => setAdminProjects((items) => items.filter((item) => item.slug !== p.slug))} />
                     </div>
                   ))}
                 </TableCard>
@@ -319,12 +332,12 @@ export default function Admin() {
 
               {tab === "team" && (
                 <TableCard title="Team Members" sub="Manage profiles shown on Team page." action="Add Member">
-                  {team.map((m) => (
+                  {adminTeam.map((m) => (
                     <div key={m.name} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
                       <img src={m.image} alt={m.name} className="h-11 w-11 rounded-xl object-cover" />
                       <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{m.name}</span><span className="block truncate text-[12px] text-muted">{m.role} · {m.location}</span></span>
                       <span className="hidden md:block"><StatusPill s="Live" /></span>
-                      <RowActions />
+                      <RowActions label={m.name} onDelete={() => setAdminTeam((items) => items.filter((item) => item.name !== m.name))} />
                     </div>
                   ))}
                 </TableCard>
@@ -332,11 +345,11 @@ export default function Admin() {
 
               {tab === "testimonials" && (
                 <TableCard title="Testimonials" sub="Client reviews rotating on the homepage." action="Add Testimonial">
-                  {testimonials.map((t) => (
+                  {adminTestimonials.map((t) => (
                     <div key={t.name} className="gap-4 border-b border-line px-5 py-4 last:border-0 sm:flex sm:items-center">
                       <img src={t.image} alt={t.name} className="h-11 w-11 shrink-0 rounded-xl object-cover" />
                       <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{t.name} · {t.company}</span><span className="block truncate text-[12px] text-muted">"{t.review.slice(0, 80)}…"</span></span>
-                      <span className="mt-2 flex items-center gap-2 sm:mt-0"><span className="text-[12px] font-bold text-amber-500">★ {t.rating}.0</span><RowActions /></span>
+                      <span className="mt-2 flex items-center gap-2 sm:mt-0"><span className="text-[12px] font-bold text-amber-500">★ {t.rating}.0</span><RowActions label={t.name} onDelete={() => setAdminTestimonials((items) => items.filter((item) => item.name !== t.name))} /></span>
                     </div>
                   ))}
                 </TableCard>
@@ -360,12 +373,12 @@ export default function Admin() {
 
               {tab === "careers" && (
                 <div className="space-y-5">
-                  <TableCard title="Open Positions" sub={`${jobs.length} roles currently published.`} action="Post a Job">
-                    {jobs.map((j) => (
+                  <TableCard title="Open Positions" sub={`${adminJobs.length} roles currently published.`} action="Post a Job">
+                    {adminJobs.map((j) => (
                       <div key={j.id} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
                         <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{j.title}</span><span className="block text-[12px] text-muted">{j.department} · {j.location} · {j.type}</span></span>
                         <span className="hidden md:block"><StatusPill s="Live" /></span>
-                        <RowActions />
+                        <RowActions label={j.title} onDelete={() => setAdminJobs((items) => items.filter((item) => item.id !== j.id))} />
                       </div>
                     ))}
                   </TableCard>
