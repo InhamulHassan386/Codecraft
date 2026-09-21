@@ -132,6 +132,18 @@ html.cc-hide-native * {
 }
 .btn-primary:active { transform: translateY(0); }
 
+/* Magnetic mouse hover: <MouseAnimation /> leans [data-magnetic] toward the
+   pointer when it comes near, and this springs it back when released. */
+[data-magnetic] {
+  will-change: transform;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.25s ease,
+    box-shadow 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+[data-magnetic].magnet-near {
+  transition: transform 0.16s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.25s ease,
+    box-shadow 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
 .btn-ghost-dark {
   border: 1px solid rgba(255,255,255,.22);
   color: #fff;
