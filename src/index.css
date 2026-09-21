@@ -67,6 +67,13 @@ body {
   color: #0b0f14;
 }
 
+/* Custom cursor: hide the native pointer only while the JS one is live.
+   Added/removed by <CustomCursor />, so a JS failure leaves the arrow intact. */
+html.cc-hide-native,
+html.cc-hide-native * {
+  cursor: none !important;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: #f1f3f6; }
