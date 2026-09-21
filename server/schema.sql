@@ -1,0 +1,20 @@
+CREATE DATABASE IF NOT EXISTS codecraft CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE codecraft;
+CREATE TABLE IF NOT EXISTS blog_posts (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  slug VARCHAR(180) NOT NULL UNIQUE,
+  title VARCHAR(255) NOT NULL,
+  excerpt TEXT NOT NULL,
+  category VARCHAR(80) NOT NULL,
+  date VARCHAR(40) NOT NULL,
+  read_time VARCHAR(40) NOT NULL,
+  image TEXT NOT NULL,
+  author VARCHAR(120) NOT NULL,
+  author_role VARCHAR(120) NOT NULL,
+  featured BOOLEAN NOT NULL DEFAULT FALSE,
+  published BOOLEAN NOT NULL DEFAULT TRUE,
+  published_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+-- Import the existing src/data/content.ts blogPosts once during deployment, or add posts from the admin API.
