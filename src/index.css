@@ -187,12 +187,3 @@ input:focus, select:focus, textarea:focus {
 }
 .section-eyebrow.on-dark { color: #7aa5ff; }
 .section-eyebrow.on-dark::before { background: #7aa5ff; }
-
-/* Custom cursor — hide native pointer on desktop; form fields keep their I-beam */
-@media (hover: hover) and (pointer: fine) {
-  .custom-cursor,
-  .custom-cursor * { cursor: none !important; }
-  .custom-cursor input,
-  .custom-cursor textarea,
-  .custom-cursor select { cursor: auto !important; }
-}
