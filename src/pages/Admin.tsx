@@ -459,18 +459,7 @@ function TableCard({ title, sub, action, children }: { title: string; sub: strin
         <div><h2 className="font-display text-lg font-extrabold">{title}</h2><p className="text-[13px] text-muted">{sub}</p></div>
         <div className="flex gap-2">
           <button className="flex items-center gap-1.5 rounded-xl border border-line px-4 py-2.5 text-[13px] font-semibold"><Search className="h-4 w-4" /> Search</button>
-          <button type="button" onClick={async () => {
-            const resourceMap: Record<string, string> = { "Add Project": "projects", "Add Service": "services", "Add Member": "team", "Add Testimonial": "testimonials", "New Post": "blogs", "Post a Job": "jobs" };
-            const resource = resourceMap[action];
-            if (!resource) { window.alert("This action does not create a database record."); return; }
-            const raw = window.prompt(`Enter ${action} data as JSON. Required fields are defined in server/schema.sql.`);
-            if (!raw) return;
-            try {
-              const response = await fetch(`/api/${resource}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: raw });
-              if (!response.ok) throw new Error((await response.json()).error || "Could not save record");
-              window.alert(`${action} saved to MySQL successfully.`); window.location.reload();
-            } catch (error) { window.alert(error instanceof Error ? error.message : "Could not save record"); }
-          }} className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> {action}</button>
+          <button type="button" onClick={() => window.alert(`${action} form will be connected to the database next. Blog records can already be deleted from this panel.`)} className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> {action}</button>
         </div>
       </div>
       <div className="border-t border-line">{children}</div>
