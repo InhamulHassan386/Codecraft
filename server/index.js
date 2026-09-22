@@ -42,19 +42,6 @@ app.delete("/api/blogs/:id", async (req, res) => {
   try { const [result] = await pool.execute("DELETE FROM blog_posts WHERE id = ?", [req.params.id]); if (!result.affectedRows) return res.status(404).json({ error: "Post not found" }); res.status(204).end(); }
   catch { res.status(400).json({ error: "Could not delete post" }); }
 });
-<<<<<<< HEAD
-=======
-app.post("/api/projects", async (req, res) => {
-  const p = req.body;
-  const slug = String(p.slug || p.name || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-  if (!slug || !p.name || !p.description || !p.image) return res.status(400).json({ error: "Project name, description and image are required" });
-  try {
-    const [result] = await pool.execute(`INSERT INTO projects (slug,name,category,description,long_description,image,technologies,results,services,current_status,progress,start_date,expected_completion,assigned_team,project_files,year,client,duration,published) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, [slug, p.name, p.category || "Web", p.description, p.long_description || p.description, p.image, JSON.stringify(p.technologies || []), JSON.stringify(p.results || []), JSON.stringify(p.services || []), p.current_status || "Planning", Number(p.progress || 0), p.start_date || null, p.expected_completion || null, JSON.stringify(p.assigned_team || []), JSON.stringify(p.project_files || []), p.year || String(new Date().getFullYear()), p.client || "", p.duration || "", p.published === false ? 0 : 1]);
-    const [rows] = await pool.query("SELECT * FROM projects WHERE id = ?", [result.insertId]); res.status(201).json(rows[0]);
-  } catch (error) { console.error("Create project:", error); res.status(400).json({ error: `Could not create project: ${error.message}` }); }
-});
-
->>>>>>> 44a10df (Add explicit project create endpoint)
 const resources = {
   projects: { table: "projects", id: "id" },
   services: { table: "services", id: "id" },
@@ -74,20 +61,18 @@ app.get("/api/:resource", async (req, res, next) => {
 app.post("/api/:resource", async (req, res, next) => {
   const resource = resources[req.params.resource];
   if (!resource) return next();
-  const jsonColumns = new Set(["technologies", "results", "services", "assigned_team", "project_files", "features", "benefits", "deliverables", "skills", "responsibilities"]);
-  const data = Object.fromEntries(Object.entries(req.body).filter(([key, value]) => key !== "id" && value !== undefined).map(([key, value]) => [key, jsonColumns.has(key) && typeof value !== "string" ? JSON.stringify(value) : value]));
+  const data = Object.fromEntries(Object.entries(req.body).filter(([key, value]) => key !== "id" && value !== undefined));
   if (!Object.keys(data).length) return res.status(400).json({ error: "Request body is empty" });
   try {
     const columns = Object.keys(data); const values = Object.values(data);
     const [result] = await pool.execute(`INSERT INTO ${resource.table} (${columns.map((c) => `\`${c}\``).join(",")}) VALUES (${columns.map(() => "?").join(",")})`, values);
     const [rows] = await pool.query(`SELECT * FROM ${resource.table} WHERE id = ?`, [result.insertId]); res.status(201).json(rows[0]);
-  } catch (error) { console.error("Create record:", error); res.status(400).json({ error: error.code === "ER_DUP_ENTRY" ? "Record already exists" : `Could not create record: ${error.message}` }); }
+  } catch (error) { res.status(400).json({ error: error.code === "ER_DUP_ENTRY" ? "Record already exists" : "Could not create record" }); }
 });
 app.put("/api/:resource/:id", async (req, res, next) => {
   const resource = resources[req.params.resource];
   if (!resource) return next();
-  const jsonColumns = new Set(["technologies", "results", "services", "assigned_team", "project_files", "features", "benefits", "deliverables", "skills", "responsibilities"]);
-  const data = Object.fromEntries(Object.entries(req.body).filter(([key, value]) => key !== "id" && value !== undefined).map(([key, value]) => [key, jsonColumns.has(key) && typeof value !== "string" ? JSON.stringify(value) : value]));
+  const data = Object.fromEntries(Object.entries(req.body).filter(([key, value]) => key !== "id" && value !== undefined));
   try {
     const columns = Object.keys(data); await pool.execute(`UPDATE ${resource.table} SET ${columns.map((c) => `\`${c}\` = ?`).join(", ")} WHERE id = ?`, [...Object.values(data), req.params.id]);
     const [rows] = await pool.query(`SELECT * FROM ${resource.table} WHERE id = ?`, [req.params.id]); res.json(rows[0]);
@@ -108,14 +93,4 @@ app.put("/api/settings/:key", async (req, res) => {
   try { await pool.execute("INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)", [req.params.key, req.body.value]); res.json({ key: req.params.key, value: req.body.value }); }
   catch { res.status(400).json({ error: "Could not save setting" }); }
 });
-async function ensureProjectColumns() {
-  const columns = [
-    ["services", "JSON NULL"], ["current_status", "VARCHAR(60) NOT NULL DEFAULT 'Planning'"], ["progress", "TINYINT UNSIGNED NOT NULL DEFAULT 0"],
-    ["start_date", "DATE NULL"], ["expected_completion", "DATE NULL"], ["assigned_team", "JSON NULL"], ["project_files", "JSON NULL"],
-  ];
-  for (const [name, definition] of columns) {
-    try { await pool.query(`ALTER TABLE projects ADD COLUMN ${name} ${definition}`); }
-    catch (error) { if (error.code !== "ER_DUP_FIELDNAME") console.warn(`projects.${name}:`, error.message); }
-  }
-}
-ensureProjectColumns().finally(() => app.listen(port, "0.0.0.0", () => console.log(`CodeCraft API listening on ${port}`)));
+app.listen(port, "0.0.0.0", () => console.log(`CodeCraft API listening on ${port}`));

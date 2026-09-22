@@ -104,8 +104,7 @@ export default function Admin() {
   const [adminQuotes, setAdminQuotes] = usePersistentState("quotes", mockQuotes);
   const [settings, setSettings] = useState<Record<string, string>>({ site_name: "CodeCraft Solutions", support_email: "support@codecraftsolutions.com", phone: "+1 (555) 012-3456", meta_title: "CodeCraft Solutions — Software House", analytics: "Connected", sitemap: "Auto-generated", quote_alerts: "Enabled", message_alerts: "Enabled", weekly_digest: "Mondays 9am" });
   const [settingsMessage, setSettingsMessage] = useState("");
-  const [projectModal, setProjectModal] = useState<{ mode: "view" | "edit" | "add"; project: Project } | null>(null);
-  const [projectSearch, setProjectSearch] = useState("");
+  const [projectModal, setProjectModal] = useState<{ mode: "view" | "edit"; project: Project } | null>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
@@ -323,8 +322,8 @@ export default function Admin() {
               )}
 
               {tab === "projects" && (
-                <TableCard title="Projects" sub="Manage portfolio case studies shown on the website." action="Add Project" onSearch={(value) => setProjectSearch(value)} onAdd={() => setProjectModal({ mode: "add", project: { slug: "", name: "", category: "Web", description: "", longDescription: "", image: "", technologies: [], results: [], year: String(new Date().getFullYear()), client: "", duration: "", services: [], currentStatus: "Planning", progress: 0, startDate: "", expectedCompletion: "", assignedTeam: [], projectFiles: [] } })}>
-                  {adminProjects.filter((p) => `${p.name} ${p.description} ${p.category}`.toLowerCase().includes(projectSearch.toLowerCase())).map((p) => (
+                <TableCard title="Projects" sub="Manage portfolio case studies shown on the website." action="Add Project">
+                  {adminProjects.map((p) => (
                     <div key={p.slug} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
                       <img src={p.image} alt={p.name} className="hidden h-12 w-16 rounded-lg object-cover sm:block" />
                       <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-bold">{p.name}</span><span className="block text-[12px] text-muted">{p.category} · {p.client} · {p.year}</span></span>
@@ -455,17 +454,14 @@ export default function Admin() {
   );
 }
 
-function TableCard({ title, sub, action, children, onSearch, onAdd }: { title: string; sub: string; action: string; children: React.ReactNode; onSearch?: (value: string) => void; onAdd?: () => void }) {
-  const [searching, setSearching] = useState(false);
+function TableCard({ title, sub, action, children }: { title: string; sub: string; action: string; children: React.ReactNode }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-card">
       <div className="flex flex-wrap items-center justify-between gap-3 p-5">
         <div><h2 className="font-display text-lg font-extrabold">{title}</h2><p className="text-[13px] text-muted">{sub}</p></div>
         <div className="flex gap-2">
-          {onSearch && searching && <input autoFocus onChange={(e) => onSearch(e.target.value)} placeholder="Search..." className="w-36 rounded-xl border border-line px-3 py-2.5 text-[13px]" />}
-          <button type="button" onClick={() => { setSearching((value) => !value); if (searching && onSearch) onSearch(""); }} className="flex items-center gap-1.5 rounded-xl border border-line px-4 py-2.5 text-[13px] font-semibold"><Search className="h-4 w-4" /> Search</button>
+          <button className="flex items-center gap-1.5 rounded-xl border border-line px-4 py-2.5 text-[13px] font-semibold"><Search className="h-4 w-4" /> Search</button>
           <button type="button" onClick={async () => {
-            if (onAdd) { onAdd(); return; }
             const resourceMap: Record<string, string> = { "Add Project": "projects", "Add Service": "services", "Add Member": "team", "Add Testimonial": "testimonials", "New Post": "blogs", "Post a Job": "jobs" };
             const resource = resourceMap[action];
             if (!resource) { window.alert("This action does not create a database record."); return; }
@@ -488,20 +484,20 @@ function TableCard({ title, sub, action, children, onSearch, onAdd }: { title: s
   );
 }
 
-function ProjectModal({ mode, project, onClose, onSaved }: { mode: "view" | "edit" | "add"; project: Project; onClose: () => void; onSaved: (project: Project) => void }) {
+function ProjectModal({ mode, project, onClose, onSaved }: { mode: "view" | "edit"; project: Project; onClose: () => void; onSaved: (project: Project) => void }) {
   const [form, setForm] = useState(project);
   const [saving, setSaving] = useState(false);
   const update = (key: keyof Project, value: string) => setForm((current) => ({ ...current, [key]: value }));
   const save = async () => {
     setSaving(true);
     try {
-      const response = await fetch(mode === "add" ? "/api/projects" : `/api/projects/${project.id}`, { method: mode === "add" ? "POST" : "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: form.slug || form.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""), name: form.name, category: form.category, description: form.description, long_description: form.longDescription, image: form.image, technologies: form.technologies || [], results: form.results || [], services: form.services || [], current_status: form.currentStatus || "Planning", progress: Number(form.progress || 0), start_date: form.startDate || null, expected_completion: form.expectedCompletion || null, assigned_team: form.assignedTeam || [], project_files: form.projectFiles || [], year: form.year || String(new Date().getFullYear()), client: form.client || "", duration: form.duration || "" }) });
-      if (!response.ok) { const text = await response.text(); let message = "Could not save project"; try { message = JSON.parse(text).error || message; } catch { if (text) message = text; } throw new Error(message); }
-      onSaved((await response.json()) as Project);
+      const response = await fetch(`/api/projects/${project.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: form.name, category: form.category, description: form.description, image: form.image, technologies: form.technologies || [], services: form.services || [], current_status: form.currentStatus || "Planning", progress: Number(form.progress || 0), start_date: form.startDate || null, expected_completion: form.expectedCompletion || null, assigned_team: form.assignedTeam || [], project_files: form.projectFiles || [] }) });
+      if (!response.ok) throw new Error("Could not save project");
+      onSaved(form);
     } catch (error) { window.alert(error instanceof Error ? error.message : "Could not save project"); } finally { setSaving(false); }
   };
   const fields: [keyof Project, string][] = [["name", "Project name"], ["category", "Services/category"], ["image", "Project image URL"], ["description", "Description"], ["technologies", "Technologies (comma separated)"], ["currentStatus", "Current status"], ["progress", "Progress %"], ["startDate", "Start date"], ["expectedCompletion", "Expected completion"], ["assignedTeam", "Assigned team (comma separated)"], ["projectFiles", "Project files (comma separated)"]];
-  return <div className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/60 p-4" onClick={onClose}><div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}><div className="flex items-center justify-between"><div><p className="section-eyebrow">Project</p><h2 className="font-display text-xl font-extrabold">{mode === "view" ? "Project details" : mode === "add" ? "Add project" : "Edit project"}</h2></div><button type="button" onClick={onClose} className="rounded-lg bg-paper px-3 py-2">✕</button></div><div className="mt-5 grid gap-4 sm:grid-cols-2">{fields.map(([key, label]) => <label key={key} className={key === "description" || key === "longDescription" ? "sm:col-span-2" : ""}><span className="mb-1.5 block text-xs font-bold text-muted">{label}</span>{key === "description" || key === "longDescription" ? <textarea disabled={mode === "view"} rows={key === "longDescription" ? 5 : 3} value={String(form[key] || "")} onChange={(e) => update(key, e.target.value)} className="w-full rounded-xl border border-line px-3 py-2.5 text-sm" /> : <input disabled={mode === "view"} value={String(form[key] || "")} onChange={(e) => update(key, e.target.value)} className="w-full rounded-xl border border-line px-3 py-2.5 text-sm" />}</label>)}</div>{mode !== "view" && <div className="mt-6 flex justify-end gap-2"><button type="button" onClick={onClose} className="rounded-xl border border-line px-4 py-2.5 text-sm font-bold">Cancel</button><button type="button" disabled={saving} onClick={save} className="btn-primary rounded-xl px-5 py-2.5 text-sm font-bold">{saving ? "Saving…" : "Save changes"}</button></div>}</div></div>;
+  return <div className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/60 p-4" onClick={onClose}><div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}><div className="flex items-center justify-between"><div><p className="section-eyebrow">Project</p><h2 className="font-display text-xl font-extrabold">{mode === "view" ? "Project details" : "Edit project"}</h2></div><button type="button" onClick={onClose} className="rounded-lg bg-paper px-3 py-2">✕</button></div><div className="mt-5 grid gap-4 sm:grid-cols-2">{fields.map(([key, label]) => <label key={key} className={key === "description" || key === "longDescription" ? "sm:col-span-2" : ""}><span className="mb-1.5 block text-xs font-bold text-muted">{label}</span>{key === "description" || key === "longDescription" ? <textarea disabled={mode === "view"} rows={key === "longDescription" ? 5 : 3} value={String(form[key] || "")} onChange={(e) => update(key, e.target.value)} className="w-full rounded-xl border border-line px-3 py-2.5 text-sm" /> : <input disabled={mode === "view"} value={String(form[key] || "")} onChange={(e) => update(key, e.target.value)} className="w-full rounded-xl border border-line px-3 py-2.5 text-sm" />}</label>)}</div>{mode === "edit" && <div className="mt-6 flex justify-end gap-2"><button type="button" onClick={onClose} className="rounded-xl border border-line px-4 py-2.5 text-sm font-bold">Cancel</button><button type="button" disabled={saving} onClick={save} className="btn-primary rounded-xl px-5 py-2.5 text-sm font-bold">{saving ? "Saving…" : "Save changes"}</button></div>}</div></div>;
 }
 
 export function AdminIcons() {
