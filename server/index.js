@@ -32,6 +32,11 @@ app.post("/api/auth/register", async (req, res) => {
     res.status(201).json({ id: result.insertId, name, email, role });
   } catch (error) { res.status(400).json({ error: error.code === "ER_DUP_ENTRY" ? "Email already exists" : "Could not create admin" }); }
 });
+app.get("/api/admins", async (_req, res) => {
+  try { const [rows] = await pool.query("SELECT id,name,email,role,is_active AS isActive,last_login AS lastLogin,created_at AS createdAt FROM admin_users ORDER BY id DESC"); res.json(rows); }
+  catch { res.status(503).json({ error: "Could not load admins" }); }
+});
+
 app.post("/api/auth/login", async (req, res) => {
   const { email, password } = req.body;
   try {
