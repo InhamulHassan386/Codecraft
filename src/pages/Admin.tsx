@@ -140,7 +140,7 @@ export default function Admin() {
           <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-ink"><LayoutDashboard className="h-6 w-6 text-white" /></span>
           <h1 className="font-display mt-5 text-center text-2xl font-extrabold text-charcoal">Admin Panel</h1>
           <p className="mt-1.5 text-center text-sm text-muted">Sign in to manage content, projects & inquiries. <span className="font-semibold">(Demo — any credentials work)</span></p>
-          <form className="mt-7 space-y-4" onSubmit={async (e) => { e.preventDefault(); setLoginError(""); try { const response = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: loginEmail, password: loginPassword }) }); const text = await response.text(); const data = text ? JSON.parse(text) : {}; if (!response.ok) throw new Error(data.error || "Login failed"); localStorage.setItem("codecraft:admin_token", data.token); setAuthed(true); } catch (error) { setLoginError(error instanceof Error ? error.message : "Login failed"); } }}>
+          <form className="mt-7 space-y-4" onSubmit={async (e) => { e.preventDefault(); setLoginError(""); try { const response = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: loginEmail, password: loginPassword }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error || "Login failed"); localStorage.setItem("codecraft:admin_token", data.token); setAuthed(true); } catch (error) { setLoginError(error instanceof Error ? error.message : "Login failed"); } }}>
             <div><label className="mb-1.5 block text-[13px] font-semibold">Email</label><input type="email" required value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} className="w-full rounded-xl border border-line px-4 py-3 text-sm" /></div>
             <div><label className="mb-1.5 block text-[13px] font-semibold">Password</label><input type="password" required value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="w-full rounded-xl border border-line px-4 py-3 text-sm" /></div>
             <button type="submit" className="btn-primary w-full rounded-xl px-6 py-3.5 text-sm font-semibold">Sign In to Dashboard</button>{loginError && <p className="text-sm font-semibold text-red-600">{loginError}</p>}
@@ -470,7 +470,7 @@ function TableCard({ title, sub, action, children }: { title: string; sub: strin
             if (!raw) return;
             try {
               const response = await fetch(`/api/${resource}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: raw });
-              if (!response.ok) { const text = await response.text(); const data = text ? JSON.parse(text) : {}; throw new Error(data.error || "Could not save record"); }
+              if (!response.ok) throw new Error((await response.json()).error || "Could not save record");
               window.alert(`${action} saved to MySQL successfully.`); window.location.reload();
             } catch (error) { window.alert(error instanceof Error ? error.message : "Could not save record"); }
           }} className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> {action}</button>
