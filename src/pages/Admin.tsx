@@ -92,10 +92,7 @@ function RowActions({ label, onDelete }: { label?: string; onDelete?: () => void
 export default function Admin() {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [sidebar, setSidebar] = useState(false);
-  const [authed, setAuthed] = useState(Boolean(localStorage.getItem("codecraft:admin_token")));
-  const [loginError, setLoginError] = useState("");
-  const [loginEmail, setLoginEmail] = useState("inhamulhassan@664gmail.com");
-  const [loginPassword, setLoginPassword] = useState("");
+  const [authed, setAuthed] = useState(false);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [blogError, setBlogError] = useState("");
   const [adminProjects, setAdminProjects] = usePersistentState("projects", seedProjects);
@@ -140,10 +137,10 @@ export default function Admin() {
           <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-ink"><LayoutDashboard className="h-6 w-6 text-white" /></span>
           <h1 className="font-display mt-5 text-center text-2xl font-extrabold text-charcoal">Admin Panel</h1>
           <p className="mt-1.5 text-center text-sm text-muted">Sign in to manage content, projects & inquiries. <span className="font-semibold">(Demo — any credentials work)</span></p>
-          <form className="mt-7 space-y-4" onSubmit={async (e) => { e.preventDefault(); setLoginError(""); try { const response = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: loginEmail, password: loginPassword }) }); const text = await response.text(); const data = text ? JSON.parse(text) : {}; if (!response.ok) throw new Error(data.error || "Login failed"); localStorage.setItem("codecraft:admin_token", data.token); setAuthed(true); } catch (error) { setLoginError(error instanceof Error ? error.message : "Login failed"); } }}>
-            <div><label className="mb-1.5 block text-[13px] font-semibold">Email</label><input type="email" required value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} className="w-full rounded-xl border border-line px-4 py-3 text-sm" /></div>
-            <div><label className="mb-1.5 block text-[13px] font-semibold">Password</label><input type="password" required value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="w-full rounded-xl border border-line px-4 py-3 text-sm" /></div>
-            <button type="submit" className="btn-primary w-full rounded-xl px-6 py-3.5 text-sm font-semibold">Sign In to Dashboard</button>{loginError && <p className="text-sm font-semibold text-red-600">{loginError}</p>}
+          <form className="mt-7 space-y-4" onSubmit={(e) => { e.preventDefault(); setAuthed(true); }}>
+            <div><label className="mb-1.5 block text-[13px] font-semibold">Email</label><input type="email" required defaultValue="admin@codecraftsolutions.com" className="w-full rounded-xl border border-line px-4 py-3 text-sm" /></div>
+            <div><label className="mb-1.5 block text-[13px] font-semibold">Password</label><input type="password" required defaultValue="password" className="w-full rounded-xl border border-line px-4 py-3 text-sm" /></div>
+            <button type="submit" className="btn-primary w-full rounded-xl px-6 py-3.5 text-sm font-semibold">Sign In to Dashboard</button>
           </form>
           <p className="mt-5 flex items-center justify-center gap-1.5 text-[12px] text-muted"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Secured with 2FA & audit logs in production</p>
         </motion.div>
@@ -172,11 +169,11 @@ export default function Admin() {
             <img src={adminTeam[0]?.image || seedTeam[0].image} alt="Admin" className="h-7 w-7 rounded-lg object-cover" />
             <span className="hidden text-left sm:block"><span className="block text-[12.5px] font-bold leading-none">Admin</span><span className="mt-0.5 block text-[10.5px] text-muted">Super Admin</span></span>
             <ChevronDown className="h-4 w-4 text-muted" />
-          </button>{profileOpen && <div className="absolute right-0 top-12 z-50 w-48 rounded-2xl border border-line bg-white p-2 shadow-card"><p className="px-3 py-2 text-xs text-muted">admin@codecraftsolutions.com</p><button type="button" onClick={() => setTab("settings")} className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold hover:bg-paper">Account settings</button><button type="button" onClick={() => { localStorage.removeItem("codecraft:admin_token"); setAuthed(false); }} className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-red-500 hover:bg-red-50">Logout</button></div>}</div>
+          </button>{profileOpen && <div className="absolute right-0 top-12 z-50 w-48 rounded-2xl border border-line bg-white p-2 shadow-card"><p className="px-3 py-2 text-xs text-muted">admin@codecraftsolutions.com</p><button type="button" onClick={() => setTab("settings")} className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold hover:bg-paper">Account settings</button><button type="button" onClick={() => setAuthed(false)} className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-red-500 hover:bg-red-50">Logout</button></div>}</div>
           <Link to="/" className="hidden h-10 items-center gap-1.5 rounded-xl border border-line px-4 text-[13px] font-semibold text-charcoal transition hover:border-brand hover:text-brand sm:flex">
             ← Website
           </Link>
-          <button onClick={() => { localStorage.removeItem("codecraft:admin_token"); setAuthed(false); }} className="hidden h-10 items-center gap-1.5 rounded-xl bg-ink px-4 text-[13px] font-semibold text-white transition hover:bg-red-600 sm:flex">
+          <button onClick={() => setAuthed(false)} className="hidden h-10 items-center gap-1.5 rounded-xl bg-ink px-4 text-[13px] font-semibold text-white transition hover:bg-red-600 sm:flex">
             <LogOut className="h-4 w-4" /> Logout
           </button>
         </div>
@@ -470,7 +467,7 @@ function TableCard({ title, sub, action, children }: { title: string; sub: strin
             if (!raw) return;
             try {
               const response = await fetch(`/api/${resource}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: raw });
-              if (!response.ok) { const text = await response.text(); const data = text ? JSON.parse(text) : {}; throw new Error(data.error || "Could not save record"); }
+              if (!response.ok) throw new Error((await response.json()).error || "Could not save record");
               window.alert(`${action} saved to MySQL successfully.`); window.location.reload();
             } catch (error) { window.alert(error instanceof Error ? error.message : "Could not save record"); }
           }} className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> {action}</button>
