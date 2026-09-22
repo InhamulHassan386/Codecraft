@@ -1,15 +1,11 @@
 import { blogPosts, type BlogPost } from "./content";
 
 const API_URL = import.meta.env.VITE_API_URL || "/api";
-async function readJson<T = any>(response: Response): Promise<T> {
-  const text = await response.text();
-  return text ? JSON.parse(text) as T : {} as T;
-}
 export async function getBlogPosts(): Promise<BlogPost[]> {
   try {
     const response = await fetch(`${API_URL}/blogs`);
     if (!response.ok) throw new Error("API unavailable");
-    return await readJson<BlogPost[]>(response);
+    return await response.json() as BlogPost[];
   } catch {
     // The website remains usable during local development before MySQL is configured.
     return blogPosts;
@@ -17,8 +13,8 @@ export async function getBlogPosts(): Promise<BlogPost[]> {
 }
 export async function createBlogPost(post: Omit<BlogPost, "slug"> & { slug: string }): Promise<BlogPost> {
   const response = await fetch(`${API_URL}/blogs`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(post) });
-  if (!response.ok) throw new Error((await readJson<{ error?: string }>(response)).error || "Could not create post");
-  return readJson<BlogPost>(response);
+  if (!response.ok) throw new Error((await response.json()).error || "Could not create post");
+  return response.json();
 }
 export async function deleteBlogPost(id: string | number) {
   const response = await fetch(`${API_URL}/blogs/${id}`, { method: "DELETE" });
@@ -29,7 +25,7 @@ export async function getResource<T>(resource: string, fallback: T[] = []): Prom
   try {
     const response = await fetch(`${API_URL}/${resource}`);
     if (!response.ok) throw new Error("API unavailable");
-    return await readJson<T[]>(response);
+    return await response.json() as T[];
   } catch { return fallback; }
 }
 
@@ -40,7 +36,7 @@ export async function deleteResource(resource: string, id: string | number) {
 export async function getSettings(): Promise<Record<string, string>> {
   const response = await fetch(`${API_URL}/settings`);
   if (!response.ok) throw new Error("Could not load settings");
-  const rows = await readJson<{ key: string; value: string }[]>(response);
+  const rows = await response.json() as { key: string; value: string }[];
   return Object.fromEntries(rows.map((row) => [row.key, row.value]));
 }
 export async function saveSetting(key: string, value: string) {
