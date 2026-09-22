@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "api": "node server/index.js"
+    "api": "node server/index.js",
+    "create-admin": "node server/create-admin.js"
   },
   "dependencies": {
     "@types/jsonwebtoken": "^9.0.10",
