@@ -18,6 +18,7 @@ export const IMAGES = {
 };
 
 export type Service = {
+  id?: number;
   slug: string;
   icon: string;
   title: string;

@@ -20,3 +20,16 @@ export async function deleteBlogPost(id: string | number) {
   const response = await fetch(`${API_URL}/blogs/${id}`, { method: "DELETE" });
   if (!response.ok) throw new Error("Could not delete post");
 }
+
+export async function getResource<T>(resource: string, fallback: T[] = []): Promise<T[]> {
+  try {
+    const response = await fetch(`${API_URL}/${resource}`);
+    if (!response.ok) throw new Error("API unavailable");
+    return await response.json() as T[];
+  } catch { return fallback; }
+}
+
+export async function deleteResource(resource: string, id: string | number) {
+  const response = await fetch(`${API_URL}/${resource}/${id}`, { method: "DELETE" });
+  if (!response.ok) throw new Error("Could not delete record");
+}
