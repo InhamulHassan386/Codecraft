@@ -1,27 +1,35 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, ArrowRight, Clock3, CalendarDays } from "lucide-react";
 import { motion } from "framer-motion";
-import { blogPosts, blogCategories } from "../data/content";
+import { blogCategories } from "../data/content";
+import { getBlogPosts } from "../data/blogApi";
+import type { BlogPost } from "../data/content";
 import { PageHero, Reveal, CTASection } from "../components/layout";
 import { BlogCard } from "./Home";
 import { cn } from "../utils/cn";
 
 export default function BlogPage() {
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("All");
   const [reading, setReading] = useState<string | null>(null);
 
+  useEffect(() => {
+    getBlogPosts().then(setPosts).finally(() => setLoading(false));
+  }, []);
+
   const filtered = useMemo(() => {
-    return blogPosts.filter((p) => {
+    return posts.filter((p) => {
       const matchCat = cat === "All" || p.category === cat;
       const matchQ = q.trim() === "" || (p.title + p.excerpt + p.category).toLowerCase().includes(q.toLowerCase());
       return matchCat && matchQ;
     });
-  }, [q, cat]);
+  }, [q, cat, posts]);
 
-  const featured = blogPosts.filter((p) => p.featured)[0];
-  const article = blogPosts.find((p) => p.slug === reading);
-  const related = article ? blogPosts.filter((p) => p.slug !== article.slug && p.category === article.category).concat(blogPosts.filter((p) => p.slug !== article?.slug && p.category !== article?.category)).slice(0, 3) : [];
+  const featured = posts.filter((p) => p.featured)[0];
+  const article = posts.find((p) => p.slug === reading);
+  const related = article ? posts.filter((p) => p.slug !== article.slug && p.category === article.category).concat(posts.filter((p) => p.slug !== article?.slug && p.category !== article?.category)).slice(0, 3) : [];
 
   return (
     <>
@@ -40,6 +48,8 @@ export default function BlogPage() {
           />
         </div>
       </PageHero>
+
+      {loading && <div className="bg-white px-4 py-8 text-center text-sm text-muted">Loading the latest insights…</div>}
 
       {/* Featured */}
       {!q && cat === "All" && featured && (
