@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const [email, password, name = "Main Admin"] = process.argv.slice(2);
-if (!email || !password || password.length < 8) {
+if (!email || !password || password.length < 6) {
   console.error("Usage: npm run create-admin -- email password [name] (password must be 8+ characters)");
   process.exit(1);
 }

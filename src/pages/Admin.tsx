@@ -94,7 +94,7 @@ export default function Admin() {
   const [sidebar, setSidebar] = useState(false);
   const [authed, setAuthed] = useState(Boolean(localStorage.getItem("codecraft:admin_token")));
   const [loginError, setLoginError] = useState("");
-  const [loginEmail, setLoginEmail] = useState("admin@codecraftsolutions.com");
+  const [loginEmail, setLoginEmail] = useState("inhamulhassan@664gmail.com");
   const [loginPassword, setLoginPassword] = useState("");
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [blogError, setBlogError] = useState("");
