@@ -122,19 +122,4 @@ app.put("/api/settings/:key", async (req, res) => {
   try { await pool.execute("INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)", [req.params.key, req.body.value]); res.json({ key: req.params.key, value: req.body.value }); }
   catch { res.status(400).json({ error: "Could not save setting" }); }
 });
-async function ensureAdminColumns() {
-  try {
-    await pool.query("ALTER TABLE admin_users ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE");
-  } catch (error) {
-    if (!String(error.code).includes("DUPLICATE") && error.code !== "ER_DUP_FIELDNAME") console.warn("is_active check:", error.message);
-  }
-  try {
-    await pool.query("ALTER TABLE admin_users ADD COLUMN last_login TIMESTAMP NULL");
-  } catch (error) {
-    if (!String(error.code).includes("DUPLICATE") && error.code !== "ER_DUP_FIELDNAME") console.warn("last_login check:", error.message);
-  }
-}
-ensureAdminColumns().then(() => app.listen(port, "0.0.0.0", () => console.log(`CodeCraft API listening on ${port}`))).catch((error) => {
-  console.error("Database setup failed:", error.message);
-  app.listen(port, "0.0.0.0", () => console.log(`CodeCraft API listening on ${port} (database setup pending)`));
-});
+app.listen(port, "0.0.0.0", () => console.log(`CodeCraft API listening on ${port}`));
