@@ -69,17 +69,17 @@ export default function Contact() {
             <Reveal delay={0.08}>
               <div className="rounded-2xl border border-line bg-white p-6 shadow-card sm:p-9">
                 {!sent ? (
-                  <form onSubmit={(e) => { e.preventDefault(); setSent(true); }}>
+                  <form onSubmit={async (e) => { e.preventDefault(); const form = e.currentTarget; const data = new FormData(form); try { const response = await fetch("/api/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: data.get("name"), email: data.get("email"), subject: `Website inquiry from ${data.get("company") || data.get("name")}`, message: data.get("message"), service: data.get("service") }) }); if (!response.ok) throw new Error("Unable to send"); setSent(true); } catch { window.alert("Message could not be sent. Please try again."); } }}>
                     <h3 className="font-display text-2xl font-extrabold text-charcoal">Send us a message</h3>
                     <p className="mt-1.5 text-sm text-muted">Fields marked * are required. We never share your details.</p>
                     <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                      <div><label className={labelCls}>Full Name *</label><input required placeholder="John Smith" className={inputCls} /></div>
-                      <div><label className={labelCls}>Email *</label><input required type="email" placeholder="john@company.com" className={inputCls} /></div>
+                      <div><label className={labelCls}>Full Name *</label><input name="name" required placeholder="John Smith" className={inputCls} /></div>
+                      <div><label className={labelCls}>Email *</label><input name="email" required type="email" placeholder="john@company.com" className={inputCls} /></div>
                       <div><label className={labelCls}>Phone</label><input placeholder="+1 (555) 000-0000" className={inputCls} /></div>
                       <div><label className={labelCls}>Company</label><input placeholder="Company Inc." className={inputCls} /></div>
                       <div>
                         <label className={labelCls}>Service Needed *</label>
-                        <select required defaultValue="" className={inputCls}>
+                        <select name="service" required defaultValue="" className={inputCls}>
                           <option value="" disabled>Select a service</option>
                           {["Web Development", "Mobile App Development", "UI/UX Design", "Software Development", "E-Commerce Development", "AI & Automation", "Cloud Solutions", "Maintenance & Support", "Not sure yet"].map((s) => <option key={s}>{s}</option>)}
                         </select>
@@ -91,7 +91,7 @@ export default function Contact() {
                           <option>Under $5,000</option><option>$5,000 – $10,000</option><option>$10,000 – $25,000</option><option>$25,000 – $50,000</option><option>$50,000+</option>
                         </select>
                       </div>
-                      <div className="sm:col-span-2"><label className={labelCls}>Message *</label><textarea required rows={5} placeholder="Tell us about your goals, timeline, and what success looks like…" className={`${inputCls} resize-none`} /></div>
+                      <div className="sm:col-span-2"><label className={labelCls}>Message *</label><textarea name="message" required rows={5} placeholder="Tell us about your goals, timeline, and what success looks like…" className={`${inputCls} resize-none`} /></div>
                     </div>
                     <button type="submit" className="btn-primary mt-6 flex w-full items-center justify-center gap-2 rounded-xl px-8 py-4 text-sm font-semibold sm:w-auto sm:px-12">
                       Send Message <Send className="h-4 w-4" />
