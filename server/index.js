@@ -2,6 +2,8 @@ import express from "express";
 import mysql from "mysql2/promise";
 import cors from "cors";
 import dotenv from "dotenv";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 dotenv.config();
 const app = express();
@@ -16,6 +18,28 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME || "codecraft",
   waitForConnections: true,
   connectionLimit: 10,
+});
+
+const JWT_SECRET = process.env.JWT_SECRET || "change-this-in-production";
+app.post("/api/auth/register", async (req, res) => {
+  const { name, email, password, role = "Editor" } = req.body;
+  if (!name || !email || !password || password.length < 8) return res.status(400).json({ error: "Name, email and an 8+ character password are required" });
+  try {
+    const [count] = await pool.query("SELECT COUNT(*) AS total FROM admin_users");
+    if (count[0].total > 0 && req.headers["x-super-admin"] !== process.env.SUPER_ADMIN_KEY) return res.status(403).json({ error: "Only a Super Admin can add admins" });
+    const hash = await bcrypt.hash(password, 12);
+    const [result] = await pool.execute("INSERT INTO admin_users (name,email,password_hash,role) VALUES (?,?,?,?)", [name, email, hash, role]);
+    res.status(201).json({ id: result.insertId, name, email, role });
+  } catch (error) { res.status(400).json({ error: error.code === "ER_DUP_ENTRY" ? "Email already exists" : "Could not create admin" }); }
+});
+app.post("/api/auth/login", async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const [rows] = await pool.execute("SELECT id,name,email,password_hash AS passwordHash,role FROM admin_users WHERE email = ? AND is_active = 1", [email]);
+    if (!rows[0] || !(await bcrypt.compare(password || "", rows[0].passwordHash))) return res.status(401).json({ error: "Invalid email or password" });
+    const admin = rows[0]; await pool.execute("UPDATE admin_users SET last_login = CURRENT_TIMESTAMP WHERE id = ?", [admin.id]);
+    res.json({ token: jwt.sign({ id: admin.id, role: admin.role }, JWT_SECRET, { expiresIn: "8h" }), admin: { id: admin.id, name: admin.name, email: admin.email, role: admin.role } });
+  } catch { res.status(503).json({ error: "Database unavailable" }); }
 });
 
 const fields = "id, slug, title, excerpt, category, date, read_time AS readTime, image, author, author_role AS authorRole, featured";
