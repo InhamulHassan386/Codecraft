@@ -363,7 +363,7 @@ export default function Admin() {
                       <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-bold">{p.title}</span><span className="block text-[12px] text-muted">{p.category} · {p.date} · {p.readTime}</span></span>
                       <span className="hidden md:block"><StatusPill s={p.featured ? "Live" : "Live"} /></span>
                       <div className="flex justify-end gap-1.5">
-                        <button onClick={async () => { if (!confirm(`Delete ${p.title}?`)) return; try { if (p.id) await deleteBlogPost(p.id); setBlogPosts((current) => current.filter((post) => post.id !== p.id && post.slug !== p.slug)); } catch (error) { setBlogError(error instanceof Error ? error.message : "Delete failed"); } }} className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-red-400 hover:text-red-500" title="Delete"><Trash2 className="h-4 w-4" /></button>
+                        <button onClick={async () => { if (!p.id || !confirm(`Delete ${p.title}?`)) return; try { await deleteBlogPost(p.id); setBlogPosts((current) => current.filter((post) => post.id !== p.id)); } catch (error) { setBlogError(error instanceof Error ? error.message : "Delete failed"); } }} className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-red-400 hover:text-red-500" title="Delete"><Trash2 className="h-4 w-4" /></button>
                       </div>
                     </div>
                   ))}
