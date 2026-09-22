@@ -7,7 +7,7 @@ import {
   TrendingUp, ArrowUpRight, CheckCircle2, Clock3, XCircle, Menu, X, LogOut, Filter,
 } from "lucide-react";
 import { projects as seedProjects, team as seedTeam, blogPosts as seedBlogPosts, jobs as seedJobs, testimonials as seedTestimonials } from "../data/content";
-import { deleteBlogPost, deleteResource, getBlogPosts, getResource } from "../data/blogApi";
+import { deleteBlogPost, deleteResource, getBlogPosts, getResource, getSettings, saveSetting } from "../data/blogApi";
 import { services as seedServices } from "../data/content";
 import type { BlogPost } from "../data/content";
 import { Counter } from "../components/layout";
@@ -102,13 +102,23 @@ export default function Admin() {
   const [adminServices, setAdminServices] = usePersistentState("services", seedServices);
   const [adminMessages, setAdminMessages] = usePersistentState("messages", mockMessages);
   const [adminQuotes, setAdminQuotes] = usePersistentState("quotes", mockQuotes);
+  const [settings, setSettings] = useState<Record<string, string>>({ site_name: "CodeCraft Solutions", support_email: "support@codecraftsolutions.com", phone: "+1 (555) 012-3456", meta_title: "CodeCraft Solutions — Software House", analytics: "Connected", sitemap: "Auto-generated", quote_alerts: "Enabled", message_alerts: "Enabled", weekly_digest: "Mondays 9am" });
+  const [settingsMessage, setSettingsMessage] = useState("");
 
   useEffect(() => {
     getBlogPosts().then(setBlogPosts).catch(() => setBlogError("Could not load blog posts"));
     getResource("services", seedServices).then(setAdminServices);
     getResource("messages", mockMessages).then(setAdminMessages);
     getResource("quotes", mockQuotes).then(setAdminQuotes);
+    getSettings().then((remote) => setSettings((current) => ({ ...current, ...remote }))).catch(() => undefined);
   }, []);
+
+  const editSetting = async (key: string, label: string) => {
+    const value = window.prompt(`Update ${label}`, settings[key] || "");
+    if (value === null) return;
+    try { await saveSetting(key, value); setSettings((current) => ({ ...current, [key]: value })); setSettingsMessage(`${label} saved to MySQL`); }
+    catch { setSettingsMessage("Could not save setting. Check that site_settings exists."); }
+  };
 
   const stats = useMemo(() => [
     { label: "Total Projects", value: 52, icon: FolderKanban, delta: "+4 this month", color: "bg-brand" },
@@ -201,7 +211,7 @@ export default function Admin() {
           <div className="mt-4 rounded-2xl bg-ink p-4">
             <p className="text-[13px] font-bold text-white">Need help?</p>
             <p className="mt-1 text-[12px] text-slate-400">Docs & video guides for every module.</p>
-            <button className="mt-3 w-full rounded-lg bg-brand py-2 text-[12.5px] font-bold text-white">View Docs</button>
+            <button type="button" onClick={() => window.open("https://github.com/InhamulHassan386/Codecraft#readme", "_blank", "noopener,noreferrer")} className="mt-3 w-full rounded-lg bg-brand py-2 text-[12.5px] font-bold text-white">View Docs</button>
           </div>
         </aside>
         {sidebar && <div className="fixed inset-0 z-30 bg-ink/50 lg:hidden" onClick={() => setSidebar(false)} />}
@@ -427,26 +437,12 @@ export default function Admin() {
               )}
 
               {tab === "settings" && (
-                <div className="grid gap-5 lg:grid-cols-2">
-                  {[
-                    { t: "General Settings", d: "Site name, tagline, logo & contact details.", rows: [["Site name", "CodeCraft Solutions"], ["Support email", "support@codecraftsolutions.com"], ["Phone", "+1 (555) 012-3456"]] },
-                    { t: "SEO & Analytics", d: "Meta defaults, sitemap & tracking.", rows: [["Meta title", "CodeCraft Solutions — Software House"], ["Analytics", "Connected ✓"], ["Sitemap", "Auto-generated"]] },
-                    { t: "Notifications", d: "Email alerts for new leads & messages.", rows: [["Quote alerts", "Enabled"], ["Message alerts", "Enabled"], ["Weekly digest", "Mondays 9am"]] },
-                    { t: "Team Access", d: "Roles & permissions for admins.", rows: [["Admins", "3 users"], ["Editors", "5 users"], ["2FA enforced", "Yes"]] },
-                  ].map((c) => (
-                    <div key={c.t} className="rounded-2xl border border-line bg-white p-6 shadow-card">
-                      <h3 className="font-display text-[16px] font-bold">{c.t}</h3>
-                      <p className="text-[12.5px] text-muted">{c.d}</p>
-                      <div className="mt-4 space-y-2.5">
-                        {c.rows.map((r) => (
-                          <div key={r[0]} className="flex items-center justify-between rounded-xl bg-paper px-4 py-2.5 text-[13px]">
-                            <span className="font-semibold text-muted">{r[0]}</span><span className="font-bold">{r[1]}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <button className="mt-4 w-full rounded-xl border border-line py-2.5 text-[13px] font-bold transition hover:border-brand hover:text-brand">Edit {c.t}</button>
-                    </div>
-                  ))}
+                <div className="space-y-5">
+                  <div><h2 className="font-display text-lg font-extrabold">Site Settings</h2><p className="text-[13px] text-muted">Settings are loaded from and saved to the MySQL site_settings table.</p>{settingsMessage && <p className="mt-2 text-sm font-semibold text-emerald-600">{settingsMessage}</p>}</div>
+                  <div className="grid gap-5 lg:grid-cols-2">
+                    {[{ t: "General Settings", d: "Site name and contact details.", fields: [["site_name", "Site name"], ["support_email", "Support email"], ["phone", "Phone"]] }, { t: "SEO & Analytics", d: "Meta defaults and tracking.", fields: [["meta_title", "Meta title"], ["analytics", "Analytics"], ["sitemap", "Sitemap"]] }, { t: "Notifications", d: "Email alerts for leads and messages.", fields: [["quote_alerts", "Quote alerts"], ["message_alerts", "Message alerts"], ["weekly_digest", "Weekly digest"]] }].map((card) => <div key={card.t} className="rounded-2xl border border-line bg-white p-6 shadow-card"><h3 className="font-display text-[16px] font-bold">{card.t}</h3><p className="text-[12.5px] text-muted">{card.d}</p><div className="mt-4 space-y-2.5">{card.fields.map(([key, label]) => <button type="button" key={key} onClick={() => editSetting(key, label)} className="flex w-full items-center justify-between rounded-xl bg-paper px-4 py-2.5 text-left text-[13px] hover:ring-1 hover:ring-brand"><span className="font-semibold text-muted">{label}</span><span className="font-bold">{settings[key]}</span><Pencil className="h-3.5 w-3.5 text-muted" /></button>)}</div></div>)}
+                  </div>
+                  <div className="rounded-2xl border border-line bg-white p-6 shadow-card"><h3 className="font-display text-[16px] font-bold">Team Access</h3><p className="text-[12.5px] text-muted">Authentication and roles will use the admin_users table.</p><button type="button" onClick={() => window.alert("Admin user management will be available after authentication is enabled.")} className="mt-4 rounded-xl border border-line px-4 py-2.5 text-[13px] font-bold hover:border-brand hover:text-brand">Manage Admin Users</button></div>
                 </div>
               )}
             </motion.div>
