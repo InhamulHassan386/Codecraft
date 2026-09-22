@@ -496,7 +496,7 @@ function ProjectModal({ mode, project, onClose, onSaved }: { mode: "view" | "edi
     setSaving(true);
     try {
       const response = await fetch(mode === "add" ? "/api/projects" : `/api/projects/${project.id}`, { method: mode === "add" ? "POST" : "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: form.slug || form.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""), name: form.name, category: form.category, description: form.description, long_description: form.longDescription, image: form.image, technologies: form.technologies || [], results: form.results || [], services: form.services || [], current_status: form.currentStatus || "Planning", progress: Number(form.progress || 0), start_date: form.startDate || null, expected_completion: form.expectedCompletion || null, assigned_team: form.assignedTeam || [], project_files: form.projectFiles || [], year: form.year || String(new Date().getFullYear()), client: form.client || "", duration: form.duration || "" }) });
-      if (!response.ok) throw new Error("Could not save project");
+      if (!response.ok) { const text = await response.text(); let message = "Could not save project"; try { message = JSON.parse(text).error || message; } catch { if (text) message = text; } throw new Error(message); }
       onSaved((await response.json()) as Project);
     } catch (error) { window.alert(error instanceof Error ? error.message : "Could not save project"); } finally { setSaving(false); }
   };
