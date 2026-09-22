@@ -7,8 +7,7 @@ import {
   TrendingUp, ArrowUpRight, CheckCircle2, Clock3, XCircle, Menu, X, LogOut, Filter,
 } from "lucide-react";
 import { projects as seedProjects, team as seedTeam, blogPosts as seedBlogPosts, jobs as seedJobs, testimonials as seedTestimonials } from "../data/content";
-import { deleteBlogPost, deleteResource, getBlogPosts, getResource } from "../data/blogApi";
-import { services as seedServices } from "../data/content";
+import { deleteBlogPost, getBlogPosts } from "../data/blogApi";
 import type { BlogPost } from "../data/content";
 import { Counter } from "../components/layout";
 import { cn } from "../utils/cn";
@@ -99,15 +98,9 @@ export default function Admin() {
   const [adminTeam, setAdminTeam] = usePersistentState("team", seedTeam);
   const [adminTestimonials, setAdminTestimonials] = usePersistentState("testimonials", seedTestimonials);
   const [adminJobs, setAdminJobs] = usePersistentState("jobs", seedJobs);
-  const [adminServices, setAdminServices] = usePersistentState("services", seedServices);
-  const [adminMessages, setAdminMessages] = usePersistentState("messages", mockMessages);
-  const [adminQuotes, setAdminQuotes] = usePersistentState("quotes", mockQuotes);
 
   useEffect(() => {
     getBlogPosts().then(setBlogPosts).catch(() => setBlogError("Could not load blog posts"));
-    getResource("services", seedServices).then(setAdminServices);
-    getResource("messages", mockMessages).then(setAdminMessages);
-    getResource("quotes", mockQuotes).then(setAdminQuotes);
   }, []);
 
   const stats = useMemo(() => [
@@ -283,7 +276,7 @@ export default function Admin() {
                         <button onClick={() => setTab("quotes")} className="text-[13px] font-bold text-brand">View all →</button>
                       </div>
                       <div className="divide-y divide-line">
-                        {adminQuotes.slice(0, 4).map((q) => (
+                        {mockQuotes.slice(0, 4).map((q) => (
                           <div key={q.contact} className="flex items-center gap-3 px-5 py-3.5">
                             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ink text-[12px] font-bold text-white">{q.contact.split(" ").map((w) => w[0]).join("")}</span>
                             <span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold">{q.name}</span><span className="block truncate text-[12px] text-muted">{q.service} · {q.budget}</span></span>
@@ -298,7 +291,7 @@ export default function Admin() {
                         <button onClick={() => setTab("messages")} className="text-[13px] font-bold text-brand">View all →</button>
                       </div>
                       <div className="divide-y divide-line">
-                        {adminMessages.slice(0, 4).map((m) => (
+                        {mockMessages.slice(0, 4).map((m) => (
                           <div key={m.email} className="flex items-center gap-3 px-5 py-3.5">
                             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-light text-[12px] font-bold text-brand">{m.name.split(" ").map((w) => w[0]).join("")}</span>
                             <span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold">{m.subject}</span><span className="block truncate text-[12px] text-muted">{m.name} · {m.date}</span></span>
@@ -326,12 +319,12 @@ export default function Admin() {
 
               {tab === "services" && (
                 <TableCard title="Services" sub="Control the 8 services displayed across the site." action="Add Service">
-                  {adminServices.map((s, i) => (
-                    <div key={s.slug} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
+                  {["Web Development", "Mobile App Development", "UI/UX Design", "Software Development", "E-Commerce Development", "AI & Automation", "Cloud Solutions", "Maintenance & Support"].map((s, i) => (
+                    <div key={s} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ink font-mono text-[12px] font-bold text-white">{String(i + 1).padStart(2, "0")}</span>
-                      <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{s.title}</span><span className="block text-[12px] text-muted">{s.features.length} features · visible on homepage</span></span>
+                      <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{s}</span><span className="block text-[12px] text-muted">8 features · visible on homepage</span></span>
                       <span className="hidden md:block"><StatusPill s="Live" /></span>
-                      <RowActions label={s.title} onDelete={async () => { if (s.id) await deleteResource("services", s.id); setAdminServices((items) => items.filter((item) => item.slug !== s.slug)); }} />
+                      <RowActions />
                     </div>
                   ))}
                 </TableCard>
@@ -404,11 +397,11 @@ export default function Admin() {
 
               {tab === "messages" && (
                 <TableCard title="Contact Messages" sub="Inquiries from the contact form." action="Mark all read">
-                  {adminMessages.map((m) => (
+                  {mockMessages.map((m) => (
                     <div key={m.email} className="gap-3 border-b border-line px-5 py-4 last:border-0 sm:flex sm:items-center">
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-light text-[12px] font-bold text-brand">{m.name.split(" ").map((w) => w[0]).join("")}</span>
                       <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-bold">{m.subject}</span><span className="block truncate text-[12px] text-muted">{m.name} · {m.email} · {m.service}</span></span>
-                      <span className="mt-2 flex items-center gap-2 sm:mt-0"><span className="text-[11.5px] text-muted">{m.date}</span><StatusPill s={m.status} /><RowActions label={m.subject} onDelete={async () => { if ("id" in m && m.id) await deleteResource("messages", String(m.id)); setAdminMessages((items) => items.filter((item) => item.email !== m.email)); }} /></span>
+                      <span className="mt-2 flex items-center gap-2 sm:mt-0"><span className="text-[11.5px] text-muted">{m.date}</span><StatusPill s={m.status} /><RowActions /></span>
                     </div>
                   ))}
                 </TableCard>
@@ -416,11 +409,11 @@ export default function Admin() {
 
               {tab === "quotes" && (
                 <TableCard title="Quote Requests" sub="Leads from the Get-a-Quote system." action="Export leads">
-                  {adminQuotes.map((q) => (
+                  {mockQuotes.map((q) => (
                     <div key={q.contact} className="gap-3 border-b border-line px-5 py-4 last:border-0 sm:flex sm:items-center">
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ink text-[12px] font-bold text-white">{q.contact.split(" ").map((w) => w[0]).join("")}</span>
                       <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{q.name} <span className="font-normal text-muted">· {q.contact}</span></span><span className="block text-[12px] text-muted">{q.service} · Budget {q.budget}</span></span>
-                      <span className="mt-2 flex items-center gap-2 sm:mt-0"><span className="text-[11.5px] text-muted">{q.date}</span><StatusPill s={q.status} /><RowActions label={q.name} onDelete={async () => { if ("id" in q && q.id) await deleteResource("quotes", String(q.id)); setAdminQuotes((items) => items.filter((item) => item.contact !== q.contact)); }} /></span>
+                      <span className="mt-2 flex items-center gap-2 sm:mt-0"><span className="text-[11.5px] text-muted">{q.date}</span><StatusPill s={q.status} /><RowActions /></span>
                     </div>
                   ))}
                 </TableCard>
