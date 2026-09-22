@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -6,9 +6,7 @@ import {
   Quote as QuoteIcon, Settings, Search, Bell, ChevronDown, Plus, Eye, Pencil, Trash2,
   TrendingUp, ArrowUpRight, CheckCircle2, Clock3, XCircle, Menu, X, LogOut, Filter,
 } from "lucide-react";
-import { projects, team, blogPosts as seedBlogPosts, jobs, testimonials } from "../data/content";
-import { deleteBlogPost, getBlogPosts } from "../data/blogApi";
-import type { BlogPost } from "../data/content";
+import { projects, team, blogPosts, jobs, testimonials } from "../data/content";
 import { Counter } from "../components/layout";
 import { cn } from "../utils/cn";
 
@@ -20,7 +18,7 @@ const tabs: { id: Tab; label: string; icon: any; badge?: number }[] = [
   { id: "services", label: "Services", icon: Briefcase, badge: 8 },
   { id: "team", label: "Team", icon: Users, badge: team.length },
   { id: "testimonials", label: "Testimonials", icon: MessageSquare, badge: testimonials.length },
-  { id: "blog", label: "Blog", icon: PenLine, badge: seedBlogPosts.length },
+  { id: "blog", label: "Blog", icon: PenLine, badge: blogPosts.length },
   { id: "careers", label: "Careers", icon: FileText, badge: jobs.length },
   { id: "messages", label: "Messages", icon: MessageSquare, badge: 12 },
   { id: "quotes", label: "Quote Requests", icon: QuoteIcon, badge: 7 },
@@ -82,12 +80,6 @@ export default function Admin() {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [sidebar, setSidebar] = useState(false);
   const [authed, setAuthed] = useState(false);
-  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
-  const [blogError, setBlogError] = useState("");
-
-  useEffect(() => {
-    getBlogPosts().then(setBlogPosts).catch(() => setBlogError("Could not load blog posts"));
-  }, []);
 
   const stats = useMemo(() => [
     { label: "Total Projects", value: 52, icon: FolderKanban, delta: "+4 this month", color: "bg-brand" },
@@ -348,12 +340,9 @@ export default function Admin() {
                       <img src={p.image} alt={p.title} className="hidden h-12 w-16 rounded-lg object-cover sm:block" />
                       <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-bold">{p.title}</span><span className="block text-[12px] text-muted">{p.category} · {p.date} · {p.readTime}</span></span>
                       <span className="hidden md:block"><StatusPill s={p.featured ? "Live" : "Live"} /></span>
-                      <div className="flex justify-end gap-1.5">
-                        <button onClick={async () => { if (!p.id || !confirm(`Delete ${p.title}?`)) return; try { await deleteBlogPost(p.id); setBlogPosts((current) => current.filter((post) => post.id !== p.id)); } catch (error) { setBlogError(error instanceof Error ? error.message : "Delete failed"); } }} className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-red-400 hover:text-red-500" title="Delete"><Trash2 className="h-4 w-4" /></button>
-                      </div>
+                      <RowActions />
                     </div>
                   ))}
-                  {blogError && <p className="border-t border-line px-5 py-3 text-sm text-red-600">{blogError}</p>}
                 </TableCard>
               )}
 
