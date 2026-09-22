@@ -4,7 +4,9 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const [argEmail, argPassword, argName] = process.argv.slice(2);
-const email = argEmail || process.env.ADMIN_EMAIL;
+const rawEmail = argEmail || process.env.ADMIN_EMAIL || "";
+// Accept accidental Markdown mail links copied into .env, then store only the real address.
+const email = rawEmail.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] || rawEmail.trim();
 const password = argPassword || process.env.ADMIN_PASSWORD;
 const name = argName || process.env.ADMIN_NAME || "Main Admin";
 if (!email || !password || password.length < 6) {
