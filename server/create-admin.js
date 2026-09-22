@@ -3,7 +3,10 @@ import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 dotenv.config();
 
-const [email, password, name = "Main Admin"] = process.argv.slice(2);
+const [argEmail, argPassword, argName] = process.argv.slice(2);
+const email = argEmail || process.env.ADMIN_EMAIL;
+const password = argPassword || process.env.ADMIN_PASSWORD;
+const name = argName || process.env.ADMIN_NAME || "Main Admin";
 if (!email || !password || password.length < 6) {
   console.error("Usage: npm run create-admin -- email password [name] (password must be 8+ characters)");
   process.exit(1);
