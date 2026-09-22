@@ -33,13 +33,3 @@ export async function deleteResource(resource: string, id: string | number) {
   const response = await fetch(`${API_URL}/${resource}/${id}`, { method: "DELETE" });
   if (!response.ok) throw new Error("Could not delete record");
 }
-export async function getSettings(): Promise<Record<string, string>> {
-  const response = await fetch(`${API_URL}/settings`);
-  if (!response.ok) throw new Error("Could not load settings");
-  const rows = await response.json() as { key: string; value: string }[];
-  return Object.fromEntries(rows.map((row) => [row.key, row.value]));
-}
-export async function saveSetting(key: string, value: string) {
-  const response = await fetch(`${API_URL}/settings/${encodeURIComponent(key)}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ value }) });
-  if (!response.ok) throw new Error("Could not save setting");
-}

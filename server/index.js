@@ -84,13 +84,4 @@ app.delete("/api/:resource/:id", async (req, res, next) => {
   try { const [result] = await pool.execute(`DELETE FROM ${resource.table} WHERE id = ?`, [req.params.id]); if (!result.affectedRows) return res.status(404).json({ error: "Record not found" }); res.status(204).end(); }
   catch { res.status(400).json({ error: "Could not delete record" }); }
 });
-app.get("/api/settings", async (_req, res) => {
-  try { const [rows] = await pool.query("SELECT setting_key AS `key`, setting_value AS value FROM site_settings ORDER BY setting_key"); res.json(rows); }
-  catch { res.status(503).json({ error: "Could not load settings" }); }
-});
-app.put("/api/settings/:key", async (req, res) => {
-  if (typeof req.body.value !== "string") return res.status(400).json({ error: "Setting value must be a string" });
-  try { await pool.execute("INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)", [req.params.key, req.body.value]); res.json({ key: req.params.key, value: req.body.value }); }
-  catch { res.status(400).json({ error: "Could not save setting" }); }
-});
 app.listen(port, "0.0.0.0", () => console.log(`CodeCraft API listening on ${port}`));
