@@ -5,8 +5,7 @@ import {
   ArrowRight, ArrowUpRight, Check, ChevronLeft, ChevronRight, Cloud, Code2,
   FolderKanban, Play, Quote, ShieldCheck, Star, Terminal, Zap, Globe, Smartphone, Database, Wrench, Layout, Server,
 } from "lucide-react";
-import { services, projects as seedProjects, techCategories, team, testimonials, blogPosts, processSteps, whyChooseUs, IMAGES, type Project } from "../data/content";
-import { getResource } from "../data/blogApi";
+import { services, projects, techCategories, team, testimonials, blogPosts, processSteps, whyChooseUs, IMAGES } from "../data/content";
 import { Reveal, SectionHeading, Counter, DynIcon, Stars, CTASection, useQuote } from "../components/layout";
 import { cn } from "../utils/cn";
 
@@ -368,7 +367,7 @@ function TechPreview() {
 
 /* ================= FEATURED WORK ================= */
 const filters = ["All", "Web", "Mobile", "UI/UX", "Software", "E-Commerce"];
-export function ProjectCard({ p, large }: { p: Project; large?: boolean }) {
+export function ProjectCard({ p, large }: { p: (typeof projects)[number]; large?: boolean }) {
   return (
     <div className="card-lift group overflow-hidden rounded-2xl border border-line bg-white shadow-card">
       <div className={cn("relative overflow-hidden", large ? "h-60 sm:h-72" : "h-52")}>
@@ -402,8 +401,6 @@ export function ProjectCard({ p, large }: { p: Project; large?: boolean }) {
 
 function FeaturedWork() {
   const [filter, setFilter] = useState("All");
-  const [projects, setProjects] = useState<Project[]>(seedProjects);
-  useEffect(() => { getResource<Project>("projects", seedProjects).then((items) => items.length && setProjects(items)); }, []);
   const list = (filter === "All" ? projects : projects.filter((p) => p.category === filter)).slice(0, 3);
   return (
     <section className="bg-paper py-20 sm:py-24">
