@@ -67,6 +67,13 @@ body {
   color: #0b0f14;
 }
 
+/* Custom cursor: hide the native pointer only while the JS one is live.
+   Added/removed by <CustomCursor />, so a JS failure leaves the arrow intact. */
+html.cc-hide-native,
+html.cc-hide-native * {
+  cursor: none !important;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: #f1f3f6; }
@@ -124,18 +131,6 @@ body {
   transform: translateY(-1px);
 }
 .btn-primary:active { transform: translateY(0); }
-
-/* Magnetic mouse hover: <MouseAnimation /> leans [data-magnetic] toward the
-   pointer when it comes near, and this springs it back when released. */
-[data-magnetic] {
-  will-change: transform;
-  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.25s ease,
-    box-shadow 0.25s ease, border-color 0.25s ease, color 0.25s ease;
-}
-[data-magnetic].magnet-near {
-  transition: transform 0.16s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.25s ease,
-    box-shadow 0.25s ease, border-color 0.25s ease, color 0.25s ease;
-}
 
 .btn-ghost-dark {
   border: 1px solid rgba(255,255,255,.22);

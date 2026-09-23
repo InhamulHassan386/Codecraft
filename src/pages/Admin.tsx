@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -6,32 +6,20 @@ import {
   Quote as QuoteIcon, Settings, Search, Bell, ChevronDown, Plus, Eye, Pencil, Trash2,
   TrendingUp, ArrowUpRight, CheckCircle2, Clock3, XCircle, Menu, X, LogOut, Filter,
 } from "lucide-react";
-import { projects as seedProjects, team as seedTeam, blogPosts as seedBlogPosts, jobs as seedJobs, testimonials as seedTestimonials } from "../data/content";
-import { deleteBlogPost, deleteResource, getBlogPosts, getResource, getSettings, saveSetting } from "../data/blogApi";
-import { services as seedServices } from "../data/content";
-import type { BlogPost } from "../data/content";
+import { projects, team, blogPosts, jobs, testimonials } from "../data/content";
 import { Counter } from "../components/layout";
 import { cn } from "../utils/cn";
-
-type Persistable = Record<string, unknown>;
-function usePersistentState<T extends Persistable>(key: string, initial: T[]) {
-  const [items, setItems] = useState<T[]>(() => {
-    try { return JSON.parse(localStorage.getItem(`codecraft:${key}`) || "null") || initial; } catch { return initial; }
-  });
-  useEffect(() => { localStorage.setItem(`codecraft:${key}`, JSON.stringify(items)); }, [key, items]);
-  return [items, setItems] as const;
-}
 
 type Tab = "dashboard" | "projects" | "services" | "team" | "testimonials" | "blog" | "careers" | "messages" | "quotes" | "settings";
 
 const tabs: { id: Tab; label: string; icon: any; badge?: number }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "projects", label: "Projects", icon: FolderKanban, badge: seedProjects.length },
+  { id: "projects", label: "Projects", icon: FolderKanban, badge: projects.length },
   { id: "services", label: "Services", icon: Briefcase, badge: 8 },
-  { id: "team", label: "Team", icon: Users, badge: seedTeam.length },
-  { id: "testimonials", label: "Testimonials", icon: MessageSquare, badge: seedTestimonials.length },
-  { id: "blog", label: "Blog", icon: PenLine, badge: seedBlogPosts.length },
-  { id: "careers", label: "Careers", icon: FileText, badge: seedJobs.length },
+  { id: "team", label: "Team", icon: Users, badge: team.length },
+  { id: "testimonials", label: "Testimonials", icon: MessageSquare, badge: testimonials.length },
+  { id: "blog", label: "Blog", icon: PenLine, badge: blogPosts.length },
+  { id: "careers", label: "Careers", icon: FileText, badge: jobs.length },
   { id: "messages", label: "Messages", icon: MessageSquare, badge: 12 },
   { id: "quotes", label: "Quote Requests", icon: QuoteIcon, badge: 7 },
   { id: "settings", label: "Settings", icon: Settings },
@@ -78,13 +66,12 @@ function StatusPill({ s }: { s: string }) {
   return <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold", map[s] || "bg-slate-100 text-slate-600")}><span className="h-1.5 w-1.5 rounded-full bg-current" />{s}</span>;
 }
 
-function RowActions({ label, onDelete }: { label?: string; onDelete?: () => void }) {
-  const notify = (action: string) => window.alert(`${action} selected${label ? `: ${label}` : ""}. This item is ready for the database action.`);
+function RowActions() {
   return (
     <div className="flex justify-end gap-1.5">
-      <button type="button" onClick={() => notify("View")} className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-brand hover:text-brand" title="View"><Eye className="h-4 w-4" /></button>
-      <button type="button" onClick={() => notify("Edit")} className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-brand hover:text-brand" title="Edit"><Pencil className="h-4 w-4" /></button>
-      <button type="button" onClick={() => { if (window.confirm(`Delete ${label || "this item"}?`)) onDelete ? onDelete() : notify("Delete"); }} className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-red-400 hover:text-red-500" title="Delete"><Trash2 className="h-4 w-4" /></button>
+      <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-brand hover:text-brand" title="View"><Eye className="h-4 w-4" /></button>
+      <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-brand hover:text-brand" title="Edit"><Pencil className="h-4 w-4" /></button>
+      <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-red-400 hover:text-red-500" title="Delete"><Trash2 className="h-4 w-4" /></button>
     </div>
   );
 }
@@ -92,38 +79,7 @@ function RowActions({ label, onDelete }: { label?: string; onDelete?: () => void
 export default function Admin() {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [sidebar, setSidebar] = useState(false);
-  const [authed, setAuthed] = useState(Boolean(localStorage.getItem("codecraft:admin_token")));
-  const [loginError, setLoginError] = useState("");
-  const [loginEmail, setLoginEmail] = useState("admin@codecraftsolutions.com");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
-  const [blogError, setBlogError] = useState("");
-  const [adminProjects, setAdminProjects] = usePersistentState("projects", seedProjects);
-  const [adminTeam, setAdminTeam] = usePersistentState("team", seedTeam);
-  const [adminTestimonials, setAdminTestimonials] = usePersistentState("testimonials", seedTestimonials);
-  const [adminJobs, setAdminJobs] = usePersistentState("jobs", seedJobs);
-  const [adminServices, setAdminServices] = usePersistentState("services", seedServices);
-  const [adminMessages, setAdminMessages] = usePersistentState("messages", mockMessages);
-  const [adminQuotes, setAdminQuotes] = usePersistentState("quotes", mockQuotes);
-  const [settings, setSettings] = useState<Record<string, string>>({ site_name: "CodeCraft Solutions", support_email: "support@codecraftsolutions.com", phone: "+1 (555) 012-3456", meta_title: "CodeCraft Solutions — Software House", analytics: "Connected", sitemap: "Auto-generated", quote_alerts: "Enabled", message_alerts: "Enabled", weekly_digest: "Mondays 9am" });
-  const [settingsMessage, setSettingsMessage] = useState("");
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-
-  useEffect(() => {
-    getBlogPosts().then(setBlogPosts).catch(() => setBlogError("Could not load blog posts"));
-    getResource("services", seedServices).then(setAdminServices);
-    getResource("messages", mockMessages).then(setAdminMessages);
-    getResource("quotes", mockQuotes).then(setAdminQuotes);
-    getSettings().then((remote) => setSettings((current) => ({ ...current, ...remote }))).catch(() => undefined);
-  }, []);
-
-  const editSetting = async (key: string, label: string) => {
-    const value = window.prompt(`Update ${label}`, settings[key] || "");
-    if (value === null) return;
-    try { await saveSetting(key, value); setSettings((current) => ({ ...current, [key]: value })); setSettingsMessage(`${label} saved to MySQL`); }
-    catch { setSettingsMessage("Could not save setting. Check that site_settings exists."); }
-  };
+  const [authed, setAuthed] = useState(false);
 
   const stats = useMemo(() => [
     { label: "Total Projects", value: 52, icon: FolderKanban, delta: "+4 this month", color: "bg-brand" },
@@ -131,7 +87,7 @@ export default function Admin() {
     { label: "Applications", value: 86, icon: FileText, delta: "+9 this week", color: "bg-amber-500" },
     { label: "Blog Posts", value: blogPosts.length, icon: PenLine, delta: "2 drafts", color: "bg-emerald-500" },
     { label: "Quote Requests", value: 34, icon: QuoteIcon, delta: "7 pending", color: "bg-rose-500" },
-  ], [blogPosts.length]);
+  ], []);
 
   if (!authed) {
     return (
@@ -140,10 +96,10 @@ export default function Admin() {
           <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-ink"><LayoutDashboard className="h-6 w-6 text-white" /></span>
           <h1 className="font-display mt-5 text-center text-2xl font-extrabold text-charcoal">Admin Panel</h1>
           <p className="mt-1.5 text-center text-sm text-muted">Sign in to manage content, projects & inquiries. <span className="font-semibold">(Demo — any credentials work)</span></p>
-          <form className="mt-7 space-y-4" onSubmit={async (e) => { e.preventDefault(); setLoginError(""); try { const response = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: loginEmail, password: loginPassword }) }); const text = await response.text(); const data = text ? JSON.parse(text) : {}; if (!response.ok) throw new Error(data.error || "Login failed"); localStorage.setItem("codecraft:admin_token", data.token); setAuthed(true); } catch (error) { setLoginError(error instanceof Error ? error.message : "Login failed"); } }}>
-            <div><label className="mb-1.5 block text-[13px] font-semibold">Email</label><input type="email" required value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} className="w-full rounded-xl border border-line px-4 py-3 text-sm" /></div>
-            <div><label className="mb-1.5 block text-[13px] font-semibold">Password</label><input type="password" required value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="w-full rounded-xl border border-line px-4 py-3 text-sm" /></div>
-            <button type="submit" className="btn-primary w-full rounded-xl px-6 py-3.5 text-sm font-semibold">Sign In to Dashboard</button>{loginError && <p className="text-sm font-semibold text-red-600">{loginError}</p>}
+          <form className="mt-7 space-y-4" onSubmit={(e) => { e.preventDefault(); setAuthed(true); }}>
+            <div><label className="mb-1.5 block text-[13px] font-semibold">Email</label><input type="email" required defaultValue="admin@codecraftsolutions.com" className="w-full rounded-xl border border-line px-4 py-3 text-sm" /></div>
+            <div><label className="mb-1.5 block text-[13px] font-semibold">Password</label><input type="password" required defaultValue="password" className="w-full rounded-xl border border-line px-4 py-3 text-sm" /></div>
+            <button type="submit" className="btn-primary w-full rounded-xl px-6 py-3.5 text-sm font-semibold">Sign In to Dashboard</button>
           </form>
           <p className="mt-5 flex items-center justify-center gap-1.5 text-[12px] text-muted"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Secured with 2FA & audit logs in production</p>
         </motion.div>
@@ -167,16 +123,19 @@ export default function Admin() {
             <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-2" />
             <input placeholder="Search projects, messages…" className="w-full rounded-xl border border-line bg-paper py-2.5 pl-10 pr-4 text-[13px]" />
           </div>
-          <div className="relative ml-auto md:ml-0"><button type="button" onClick={() => setNotificationsOpen((value) => !value)} className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-line" aria-label="Notifications"><Bell className="h-5 w-5 text-charcoal" /><span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" /></button>{notificationsOpen && <div className="absolute right-0 top-12 z-50 w-72 rounded-2xl border border-line bg-white p-4 shadow-card"><p className="font-display text-sm font-bold">Notifications</p><p className="mt-2 text-xs text-muted">New messages and quote requests will appear here.</p><button type="button" onClick={() => setNotificationsOpen(false)} className="mt-3 text-xs font-bold text-brand">Mark all as read</button></div>}</div>
-          <div className="relative"><button type="button" onClick={() => setProfileOpen((value) => !value)} className="flex items-center gap-2 rounded-xl border border-line py-1.5 pl-1.5 pr-3">
-            <img src={adminTeam[0]?.image || seedTeam[0].image} alt="Admin" className="h-7 w-7 rounded-lg object-cover" />
+          <button className="relative ml-auto flex h-10 w-10 items-center justify-center rounded-xl border border-line md:ml-0" aria-label="Notifications">
+            <Bell className="h-4.5 w-4.5 h-5 w-5 text-charcoal" />
+            <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
+          </button>
+          <button className="flex items-center gap-2 rounded-xl border border-line py-1.5 pl-1.5 pr-3">
+            <img src={team[0].image} alt="Admin" className="h-7 w-7 rounded-lg object-cover" />
             <span className="hidden text-left sm:block"><span className="block text-[12.5px] font-bold leading-none">Admin</span><span className="mt-0.5 block text-[10.5px] text-muted">Super Admin</span></span>
             <ChevronDown className="h-4 w-4 text-muted" />
-          </button>{profileOpen && <div className="absolute right-0 top-12 z-50 w-48 rounded-2xl border border-line bg-white p-2 shadow-card"><p className="px-3 py-2 text-xs text-muted">admin@codecraftsolutions.com</p><button type="button" onClick={() => setTab("settings")} className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold hover:bg-paper">Account settings</button><button type="button" onClick={() => { localStorage.removeItem("codecraft:admin_token"); setAuthed(false); }} className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-red-500 hover:bg-red-50">Logout</button></div>}</div>
+          </button>
           <Link to="/" className="hidden h-10 items-center gap-1.5 rounded-xl border border-line px-4 text-[13px] font-semibold text-charcoal transition hover:border-brand hover:text-brand sm:flex">
             ← Website
           </Link>
-          <button onClick={() => { localStorage.removeItem("codecraft:admin_token"); setAuthed(false); }} className="hidden h-10 items-center gap-1.5 rounded-xl bg-ink px-4 text-[13px] font-semibold text-white transition hover:bg-red-600 sm:flex">
+          <button onClick={() => setAuthed(false)} className="hidden h-10 items-center gap-1.5 rounded-xl bg-ink px-4 text-[13px] font-semibold text-white transition hover:bg-red-600 sm:flex">
             <LogOut className="h-4 w-4" /> Logout
           </button>
         </div>
@@ -213,7 +172,7 @@ export default function Admin() {
           <div className="mt-4 rounded-2xl bg-ink p-4">
             <p className="text-[13px] font-bold text-white">Need help?</p>
             <p className="mt-1 text-[12px] text-slate-400">Docs & video guides for every module.</p>
-            <button type="button" onClick={() => window.open("https://github.com/InhamulHassan386/Codecraft#readme", "_blank", "noopener,noreferrer")} className="mt-3 w-full rounded-lg bg-brand py-2 text-[12.5px] font-bold text-white">View Docs</button>
+            <button className="mt-3 w-full rounded-lg bg-brand py-2 text-[12.5px] font-bold text-white">View Docs</button>
           </div>
         </aside>
         {sidebar && <div className="fixed inset-0 z-30 bg-ink/50 lg:hidden" onClick={() => setSidebar(false)} />}
@@ -295,7 +254,7 @@ export default function Admin() {
                         <button onClick={() => setTab("quotes")} className="text-[13px] font-bold text-brand">View all →</button>
                       </div>
                       <div className="divide-y divide-line">
-                        {adminQuotes.slice(0, 4).map((q) => (
+                        {mockQuotes.slice(0, 4).map((q) => (
                           <div key={q.contact} className="flex items-center gap-3 px-5 py-3.5">
                             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ink text-[12px] font-bold text-white">{q.contact.split(" ").map((w) => w[0]).join("")}</span>
                             <span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold">{q.name}</span><span className="block truncate text-[12px] text-muted">{q.service} · {q.budget}</span></span>
@@ -310,7 +269,7 @@ export default function Admin() {
                         <button onClick={() => setTab("messages")} className="text-[13px] font-bold text-brand">View all →</button>
                       </div>
                       <div className="divide-y divide-line">
-                        {adminMessages.slice(0, 4).map((m) => (
+                        {mockMessages.slice(0, 4).map((m) => (
                           <div key={m.email} className="flex items-center gap-3 px-5 py-3.5">
                             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-light text-[12px] font-bold text-brand">{m.name.split(" ").map((w) => w[0]).join("")}</span>
                             <span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold">{m.subject}</span><span className="block truncate text-[12px] text-muted">{m.name} · {m.date}</span></span>
@@ -325,12 +284,12 @@ export default function Admin() {
 
               {tab === "projects" && (
                 <TableCard title="Projects" sub="Manage portfolio case studies shown on the website." action="Add Project">
-                  {adminProjects.map((p) => (
+                  {projects.map((p) => (
                     <div key={p.slug} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
                       <img src={p.image} alt={p.name} className="hidden h-12 w-16 rounded-lg object-cover sm:block" />
                       <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-bold">{p.name}</span><span className="block text-[12px] text-muted">{p.category} · {p.client} · {p.year}</span></span>
                       <span className="hidden md:block"><StatusPill s="Live" /></span>
-                      <RowActions label={p.name} onDelete={() => setAdminProjects((items) => items.filter((item) => item.slug !== p.slug))} />
+                      <RowActions />
                     </div>
                   ))}
                 </TableCard>
@@ -338,12 +297,12 @@ export default function Admin() {
 
               {tab === "services" && (
                 <TableCard title="Services" sub="Control the 8 services displayed across the site." action="Add Service">
-                  {adminServices.map((s, i) => (
-                    <div key={s.slug} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
+                  {["Web Development", "Mobile App Development", "UI/UX Design", "Software Development", "E-Commerce Development", "AI & Automation", "Cloud Solutions", "Maintenance & Support"].map((s, i) => (
+                    <div key={s} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ink font-mono text-[12px] font-bold text-white">{String(i + 1).padStart(2, "0")}</span>
-                      <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{s.title}</span><span className="block text-[12px] text-muted">{s.features.length} features · visible on homepage</span></span>
+                      <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{s}</span><span className="block text-[12px] text-muted">8 features · visible on homepage</span></span>
                       <span className="hidden md:block"><StatusPill s="Live" /></span>
-                      <RowActions label={s.title} onDelete={async () => { if (s.id) await deleteResource("services", s.id); setAdminServices((items) => items.filter((item) => item.slug !== s.slug)); }} />
+                      <RowActions />
                     </div>
                   ))}
                 </TableCard>
@@ -351,12 +310,12 @@ export default function Admin() {
 
               {tab === "team" && (
                 <TableCard title="Team Members" sub="Manage profiles shown on Team page." action="Add Member">
-                  {adminTeam.map((m) => (
+                  {team.map((m) => (
                     <div key={m.name} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
                       <img src={m.image} alt={m.name} className="h-11 w-11 rounded-xl object-cover" />
                       <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{m.name}</span><span className="block truncate text-[12px] text-muted">{m.role} · {m.location}</span></span>
                       <span className="hidden md:block"><StatusPill s="Live" /></span>
-                      <RowActions label={m.name} onDelete={() => setAdminTeam((items) => items.filter((item) => item.name !== m.name))} />
+                      <RowActions />
                     </div>
                   ))}
                 </TableCard>
@@ -364,11 +323,11 @@ export default function Admin() {
 
               {tab === "testimonials" && (
                 <TableCard title="Testimonials" sub="Client reviews rotating on the homepage." action="Add Testimonial">
-                  {adminTestimonials.map((t) => (
+                  {testimonials.map((t) => (
                     <div key={t.name} className="gap-4 border-b border-line px-5 py-4 last:border-0 sm:flex sm:items-center">
                       <img src={t.image} alt={t.name} className="h-11 w-11 shrink-0 rounded-xl object-cover" />
                       <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{t.name} · {t.company}</span><span className="block truncate text-[12px] text-muted">"{t.review.slice(0, 80)}…"</span></span>
-                      <span className="mt-2 flex items-center gap-2 sm:mt-0"><span className="text-[12px] font-bold text-amber-500">★ {t.rating}.0</span><RowActions label={t.name} onDelete={() => setAdminTestimonials((items) => items.filter((item) => item.name !== t.name))} /></span>
+                      <span className="mt-2 flex items-center gap-2 sm:mt-0"><span className="text-[12px] font-bold text-amber-500">★ {t.rating}.0</span><RowActions /></span>
                     </div>
                   ))}
                 </TableCard>
@@ -381,23 +340,20 @@ export default function Admin() {
                       <img src={p.image} alt={p.title} className="hidden h-12 w-16 rounded-lg object-cover sm:block" />
                       <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-bold">{p.title}</span><span className="block text-[12px] text-muted">{p.category} · {p.date} · {p.readTime}</span></span>
                       <span className="hidden md:block"><StatusPill s={p.featured ? "Live" : "Live"} /></span>
-                      <div className="flex justify-end gap-1.5">
-                        <button onClick={async () => { if (!confirm(`Delete ${p.title}?`)) return; try { if (p.id) await deleteBlogPost(p.id); setBlogPosts((current) => current.filter((post) => post.id !== p.id && post.slug !== p.slug)); } catch (error) { setBlogError(error instanceof Error ? error.message : "Delete failed"); } }} className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-red-400 hover:text-red-500" title="Delete"><Trash2 className="h-4 w-4" /></button>
-                      </div>
+                      <RowActions />
                     </div>
                   ))}
-                  {blogError && <p className="border-t border-line px-5 py-3 text-sm text-red-600">{blogError}</p>}
                 </TableCard>
               )}
 
               {tab === "careers" && (
                 <div className="space-y-5">
-                  <TableCard title="Open Positions" sub={`${adminJobs.length} roles currently published.`} action="Post a Job">
-                    {adminJobs.map((j) => (
+                  <TableCard title="Open Positions" sub={`${jobs.length} roles currently published.`} action="Post a Job">
+                    {jobs.map((j) => (
                       <div key={j.id} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
                         <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{j.title}</span><span className="block text-[12px] text-muted">{j.department} · {j.location} · {j.type}</span></span>
                         <span className="hidden md:block"><StatusPill s="Live" /></span>
-                        <RowActions label={j.title} onDelete={() => setAdminJobs((items) => items.filter((item) => item.id !== j.id))} />
+                        <RowActions />
                       </div>
                     ))}
                   </TableCard>
@@ -416,11 +372,11 @@ export default function Admin() {
 
               {tab === "messages" && (
                 <TableCard title="Contact Messages" sub="Inquiries from the contact form." action="Mark all read">
-                  {adminMessages.map((m) => (
+                  {mockMessages.map((m) => (
                     <div key={m.email} className="gap-3 border-b border-line px-5 py-4 last:border-0 sm:flex sm:items-center">
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-light text-[12px] font-bold text-brand">{m.name.split(" ").map((w) => w[0]).join("")}</span>
                       <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-bold">{m.subject}</span><span className="block truncate text-[12px] text-muted">{m.name} · {m.email} · {m.service}</span></span>
-                      <span className="mt-2 flex items-center gap-2 sm:mt-0"><span className="text-[11.5px] text-muted">{m.date}</span><StatusPill s={m.status} /><RowActions label={m.subject} onDelete={async () => { if ("id" in m && m.id) await deleteResource("messages", String(m.id)); setAdminMessages((items) => items.filter((item) => item.email !== m.email)); }} /></span>
+                      <span className="mt-2 flex items-center gap-2 sm:mt-0"><span className="text-[11.5px] text-muted">{m.date}</span><StatusPill s={m.status} /><RowActions /></span>
                     </div>
                   ))}
                 </TableCard>
@@ -428,23 +384,37 @@ export default function Admin() {
 
               {tab === "quotes" && (
                 <TableCard title="Quote Requests" sub="Leads from the Get-a-Quote system." action="Export leads">
-                  {adminQuotes.map((q) => (
+                  {mockQuotes.map((q) => (
                     <div key={q.contact} className="gap-3 border-b border-line px-5 py-4 last:border-0 sm:flex sm:items-center">
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ink text-[12px] font-bold text-white">{q.contact.split(" ").map((w) => w[0]).join("")}</span>
                       <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{q.name} <span className="font-normal text-muted">· {q.contact}</span></span><span className="block text-[12px] text-muted">{q.service} · Budget {q.budget}</span></span>
-                      <span className="mt-2 flex items-center gap-2 sm:mt-0"><span className="text-[11.5px] text-muted">{q.date}</span><StatusPill s={q.status} /><RowActions label={q.name} onDelete={async () => { if ("id" in q && q.id) await deleteResource("quotes", String(q.id)); setAdminQuotes((items) => items.filter((item) => item.contact !== q.contact)); }} /></span>
+                      <span className="mt-2 flex items-center gap-2 sm:mt-0"><span className="text-[11.5px] text-muted">{q.date}</span><StatusPill s={q.status} /><RowActions /></span>
                     </div>
                   ))}
                 </TableCard>
               )}
 
               {tab === "settings" && (
-                <div className="space-y-5">
-                  <div><h2 className="font-display text-lg font-extrabold">Site Settings</h2><p className="text-[13px] text-muted">Settings are loaded from and saved to the MySQL site_settings table.</p>{settingsMessage && <p className="mt-2 text-sm font-semibold text-emerald-600">{settingsMessage}</p>}</div>
-                  <div className="grid gap-5 lg:grid-cols-2">
-                    {[{ t: "General Settings", d: "Site name and contact details.", fields: [["site_name", "Site name"], ["support_email", "Support email"], ["phone", "Phone"]] }, { t: "SEO & Analytics", d: "Meta defaults and tracking.", fields: [["meta_title", "Meta title"], ["analytics", "Analytics"], ["sitemap", "Sitemap"]] }, { t: "Notifications", d: "Email alerts for leads and messages.", fields: [["quote_alerts", "Quote alerts"], ["message_alerts", "Message alerts"], ["weekly_digest", "Weekly digest"]] }].map((card) => <div key={card.t} className="rounded-2xl border border-line bg-white p-6 shadow-card"><h3 className="font-display text-[16px] font-bold">{card.t}</h3><p className="text-[12.5px] text-muted">{card.d}</p><div className="mt-4 space-y-2.5">{card.fields.map(([key, label]) => (["quote_alerts", "message_alerts"].includes(key) ? <button type="button" key={key} role="switch" aria-checked={settings[key] === "Enabled"} onClick={async () => { const value = settings[key] === "Enabled" ? "Disabled" : "Enabled"; try { await saveSetting(key, value); setSettings((current) => ({ ...current, [key]: value })); setSettingsMessage(`${label} ${value.toLowerCase()}`); } catch { setSettingsMessage("Could not save setting"); } }} className="flex w-full items-center justify-between rounded-xl bg-paper px-4 py-2.5 text-left text-[13px] hover:ring-1 hover:ring-brand"><span className="font-semibold text-muted">{label}</span><span className={`relative h-6 w-11 rounded-full transition ${settings[key] === "Enabled" ? "bg-brand" : "bg-slate-300"}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${settings[key] === "Enabled" ? "left-6" : "left-1"}`} /></span></button> : <button type="button" key={key} onClick={() => editSetting(key, label)} className="flex w-full items-center justify-between rounded-xl bg-paper px-4 py-2.5 text-left text-[13px] hover:ring-1 hover:ring-brand"><span className="font-semibold text-muted">{label}</span><span className="font-bold">{settings[key]}</span><Pencil className="h-3.5 w-3.5 text-muted" /></button>))}</div></div>)}
-                  </div>
-                  <div className="rounded-2xl border border-line bg-white p-6 shadow-card"><h3 className="font-display text-[16px] font-bold">Team Access</h3><p className="text-[12.5px] text-muted">Authentication and roles will use the admin_users table.</p><button type="button" onClick={() => window.alert("Admin user management will be available after authentication is enabled.")} className="mt-4 rounded-xl border border-line px-4 py-2.5 text-[13px] font-bold hover:border-brand hover:text-brand">Manage Admin Users</button></div>
+                <div className="grid gap-5 lg:grid-cols-2">
+                  {[
+                    { t: "General Settings", d: "Site name, tagline, logo & contact details.", rows: [["Site name", "CodeCraft Solutions"], ["Support email", "support@codecraftsolutions.com"], ["Phone", "+1 (555) 012-3456"]] },
+                    { t: "SEO & Analytics", d: "Meta defaults, sitemap & tracking.", rows: [["Meta title", "CodeCraft Solutions — Software House"], ["Analytics", "Connected ✓"], ["Sitemap", "Auto-generated"]] },
+                    { t: "Notifications", d: "Email alerts for new leads & messages.", rows: [["Quote alerts", "Enabled"], ["Message alerts", "Enabled"], ["Weekly digest", "Mondays 9am"]] },
+                    { t: "Team Access", d: "Roles & permissions for admins.", rows: [["Admins", "3 users"], ["Editors", "5 users"], ["2FA enforced", "Yes"]] },
+                  ].map((c) => (
+                    <div key={c.t} className="rounded-2xl border border-line bg-white p-6 shadow-card">
+                      <h3 className="font-display text-[16px] font-bold">{c.t}</h3>
+                      <p className="text-[12.5px] text-muted">{c.d}</p>
+                      <div className="mt-4 space-y-2.5">
+                        {c.rows.map((r) => (
+                          <div key={r[0]} className="flex items-center justify-between rounded-xl bg-paper px-4 py-2.5 text-[13px]">
+                            <span className="font-semibold text-muted">{r[0]}</span><span className="font-bold">{r[1]}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <button className="mt-4 w-full rounded-xl border border-line py-2.5 text-[13px] font-bold transition hover:border-brand hover:text-brand">Edit {c.t}</button>
+                    </div>
+                  ))}
                 </div>
               )}
             </motion.div>
@@ -462,18 +432,7 @@ function TableCard({ title, sub, action, children }: { title: string; sub: strin
         <div><h2 className="font-display text-lg font-extrabold">{title}</h2><p className="text-[13px] text-muted">{sub}</p></div>
         <div className="flex gap-2">
           <button className="flex items-center gap-1.5 rounded-xl border border-line px-4 py-2.5 text-[13px] font-semibold"><Search className="h-4 w-4" /> Search</button>
-          <button type="button" onClick={async () => {
-            const resourceMap: Record<string, string> = { "Add Project": "projects", "Add Service": "services", "Add Member": "team", "Add Testimonial": "testimonials", "New Post": "blogs", "Post a Job": "jobs" };
-            const resource = resourceMap[action];
-            if (!resource) { window.alert("This action does not create a database record."); return; }
-            const raw = window.prompt(`Enter ${action} data as JSON. Required fields are defined in server/schema.sql.`);
-            if (!raw) return;
-            try {
-              const response = await fetch(`/api/${resource}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: raw });
-              if (!response.ok) { const text = await response.text(); const data = text ? JSON.parse(text) : {}; throw new Error(data.error || "Could not save record"); }
-              window.alert(`${action} saved to MySQL successfully.`); window.location.reload();
-            } catch (error) { window.alert(error instanceof Error ? error.message : "Could not save record"); }
-          }} className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> {action}</button>
+          <button className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> {action}</button>
         </div>
       </div>
       <div className="border-t border-line">{children}</div>

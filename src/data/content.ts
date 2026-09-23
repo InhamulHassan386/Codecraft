@@ -18,7 +18,6 @@ export const IMAGES = {
 };
 
 export type Service = {
-  id?: number;
   slug: string;
   icon: string;
   title: string;
@@ -410,7 +409,6 @@ export const testimonials: Testimonial[] = [
 ];
 
 export type BlogPost = {
-  id?: number;
   slug: string;
   title: string;
   excerpt: string;
