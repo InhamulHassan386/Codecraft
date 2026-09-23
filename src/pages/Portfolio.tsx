@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, ArrowUpRight, Calendar, User, Clock3 } from "lucide-react";
-import { projects as seedProjects, type Project } from "../data/content";
-import { getResource } from "../data/blogApi";
+import { projects } from "../data/content";
 import { PageHero, Reveal, Counter, CTASection, useQuote } from "../components/layout";
 import { cn } from "../utils/cn";
 
@@ -11,9 +10,7 @@ const filters = ["All", "Web", "Mobile", "UI/UX", "Software", "E-Commerce"];
 export default function Portfolio() {
   const [filter, setFilter] = useState("All");
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
-  const [projects, setProjects] = useState<Project[]>(seedProjects);
   const { open } = useQuote();
-  useEffect(() => { getResource<Project>("projects", seedProjects).then((items) => { if (items.length) setProjects(items); }); }, []);
   const list = filter === "All" ? projects : projects.filter((p) => p.category === filter);
   const active = projects.find((p) => p.slug === activeSlug);
 
