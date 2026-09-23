@@ -122,17 +122,9 @@ export const services: Service[] = [
 ];
 
 export type Project = {
-  id?: number;
   slug: string;
   name: string;
   category: "Web" | "Mobile" | "UI/UX" | "Software" | "E-Commerce";
-  services?: string[];
-  currentStatus?: string;
-  progress?: number;
-  startDate?: string;
-  expectedCompletion?: string;
-  assignedTeam?: string[];
-  projectFiles?: string[];
   description: string;
   longDescription: string;
   image: string;

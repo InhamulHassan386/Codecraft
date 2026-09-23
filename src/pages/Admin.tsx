@@ -9,7 +9,7 @@ import {
 import { projects as seedProjects, team as seedTeam, blogPosts as seedBlogPosts, jobs as seedJobs, testimonials as seedTestimonials } from "../data/content";
 import { deleteBlogPost, deleteResource, getBlogPosts, getResource, getSettings, saveSetting } from "../data/blogApi";
 import { services as seedServices } from "../data/content";
-import type { BlogPost, Project } from "../data/content";
+import type { BlogPost } from "../data/content";
 import { Counter } from "../components/layout";
 import { cn } from "../utils/cn";
 
@@ -92,7 +92,10 @@ function RowActions({ label, onDelete }: { label?: string; onDelete?: () => void
 export default function Admin() {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [sidebar, setSidebar] = useState(false);
-  const [authed, setAuthed] = useState(false);
+  const [authed, setAuthed] = useState(Boolean(localStorage.getItem("codecraft:admin_token")));
+  const [loginError, setLoginError] = useState("");
+  const [loginEmail, setLoginEmail] = useState("admin@codecraftsolutions.com");
+  const [loginPassword, setLoginPassword] = useState("");
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [blogError, setBlogError] = useState("");
   const [adminProjects, setAdminProjects] = usePersistentState("projects", seedProjects);
@@ -104,8 +107,6 @@ export default function Admin() {
   const [adminQuotes, setAdminQuotes] = usePersistentState("quotes", mockQuotes);
   const [settings, setSettings] = useState<Record<string, string>>({ site_name: "CodeCraft Solutions", support_email: "support@codecraftsolutions.com", phone: "+1 (555) 012-3456", meta_title: "CodeCraft Solutions — Software House", analytics: "Connected", sitemap: "Auto-generated", quote_alerts: "Enabled", message_alerts: "Enabled", weekly_digest: "Mondays 9am" });
   const [settingsMessage, setSettingsMessage] = useState("");
-  const [projectModal, setProjectModal] = useState<{ mode: "view" | "edit" | "add"; project: Project } | null>(null);
-  const [projectSearch, setProjectSearch] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
@@ -139,10 +140,10 @@ export default function Admin() {
           <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-ink"><LayoutDashboard className="h-6 w-6 text-white" /></span>
           <h1 className="font-display mt-5 text-center text-2xl font-extrabold text-charcoal">Admin Panel</h1>
           <p className="mt-1.5 text-center text-sm text-muted">Sign in to manage content, projects & inquiries. <span className="font-semibold">(Demo — any credentials work)</span></p>
-          <form className="mt-7 space-y-4" onSubmit={(e) => { e.preventDefault(); setAuthed(true); }}>
-            <div><label className="mb-1.5 block text-[13px] font-semibold">Email</label><input type="email" required defaultValue="admin@codecraftsolutions.com" className="w-full rounded-xl border border-line px-4 py-3 text-sm" /></div>
-            <div><label className="mb-1.5 block text-[13px] font-semibold">Password</label><input type="password" required defaultValue="password" className="w-full rounded-xl border border-line px-4 py-3 text-sm" /></div>
-            <button type="submit" className="btn-primary w-full rounded-xl px-6 py-3.5 text-sm font-semibold">Sign In to Dashboard</button>
+          <form className="mt-7 space-y-4" onSubmit={async (e) => { e.preventDefault(); setLoginError(""); try { const response = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: loginEmail, password: loginPassword }) }); const text = await response.text(); const data = text ? JSON.parse(text) : {}; if (!response.ok) throw new Error(data.error || "Login failed"); localStorage.setItem("codecraft:admin_token", data.token); setAuthed(true); } catch (error) { setLoginError(error instanceof Error ? error.message : "Login failed"); } }}>
+            <div><label className="mb-1.5 block text-[13px] font-semibold">Email</label><input type="email" required value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} className="w-full rounded-xl border border-line px-4 py-3 text-sm" /></div>
+            <div><label className="mb-1.5 block text-[13px] font-semibold">Password</label><input type="password" required value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="w-full rounded-xl border border-line px-4 py-3 text-sm" /></div>
+            <button type="submit" className="btn-primary w-full rounded-xl px-6 py-3.5 text-sm font-semibold">Sign In to Dashboard</button>{loginError && <p className="text-sm font-semibold text-red-600">{loginError}</p>}
           </form>
           <p className="mt-5 flex items-center justify-center gap-1.5 text-[12px] text-muted"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Secured with 2FA & audit logs in production</p>
         </motion.div>
@@ -171,11 +172,11 @@ export default function Admin() {
             <img src={adminTeam[0]?.image || seedTeam[0].image} alt="Admin" className="h-7 w-7 rounded-lg object-cover" />
             <span className="hidden text-left sm:block"><span className="block text-[12.5px] font-bold leading-none">Admin</span><span className="mt-0.5 block text-[10.5px] text-muted">Super Admin</span></span>
             <ChevronDown className="h-4 w-4 text-muted" />
-          </button>{profileOpen && <div className="absolute right-0 top-12 z-50 w-48 rounded-2xl border border-line bg-white p-2 shadow-card"><p className="px-3 py-2 text-xs text-muted">admin@codecraftsolutions.com</p><button type="button" onClick={() => setTab("settings")} className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold hover:bg-paper">Account settings</button><button type="button" onClick={() => setAuthed(false)} className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-red-500 hover:bg-red-50">Logout</button></div>}</div>
+          </button>{profileOpen && <div className="absolute right-0 top-12 z-50 w-48 rounded-2xl border border-line bg-white p-2 shadow-card"><p className="px-3 py-2 text-xs text-muted">admin@codecraftsolutions.com</p><button type="button" onClick={() => setTab("settings")} className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold hover:bg-paper">Account settings</button><button type="button" onClick={() => { localStorage.removeItem("codecraft:admin_token"); setAuthed(false); }} className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-red-500 hover:bg-red-50">Logout</button></div>}</div>
           <Link to="/" className="hidden h-10 items-center gap-1.5 rounded-xl border border-line px-4 text-[13px] font-semibold text-charcoal transition hover:border-brand hover:text-brand sm:flex">
             ← Website
           </Link>
-          <button onClick={() => setAuthed(false)} className="hidden h-10 items-center gap-1.5 rounded-xl bg-ink px-4 text-[13px] font-semibold text-white transition hover:bg-red-600 sm:flex">
+          <button onClick={() => { localStorage.removeItem("codecraft:admin_token"); setAuthed(false); }} className="hidden h-10 items-center gap-1.5 rounded-xl bg-ink px-4 text-[13px] font-semibold text-white transition hover:bg-red-600 sm:flex">
             <LogOut className="h-4 w-4" /> Logout
           </button>
         </div>
@@ -323,13 +324,13 @@ export default function Admin() {
               )}
 
               {tab === "projects" && (
-                <TableCard title="Projects" sub="Manage portfolio case studies shown on the website." action="Add Project" onSearch={(value) => setProjectSearch(value)} onAdd={() => setProjectModal({ mode: "add", project: { slug: "", name: "", category: "Web", description: "", longDescription: "", image: "", technologies: [], results: [], year: String(new Date().getFullYear()), client: "", duration: "", services: [], currentStatus: "Planning", progress: 0, startDate: "", expectedCompletion: "", assignedTeam: [], projectFiles: [] } })}>
-                  {adminProjects.filter((p) => `${p.name} ${p.description} ${p.category}`.toLowerCase().includes(projectSearch.toLowerCase())).map((p) => (
+                <TableCard title="Projects" sub="Manage portfolio case studies shown on the website." action="Add Project">
+                  {adminProjects.map((p) => (
                     <div key={p.slug} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
                       <img src={p.image} alt={p.name} className="hidden h-12 w-16 rounded-lg object-cover sm:block" />
                       <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-bold">{p.name}</span><span className="block text-[12px] text-muted">{p.category} · {p.client} · {p.year}</span></span>
                       <span className="hidden md:block"><StatusPill s="Live" /></span>
-                      <div className="flex justify-end gap-1.5"><button type="button" onClick={() => setProjectModal({ mode: "view", project: p })} className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted hover:border-brand hover:text-brand" title="View"><Eye className="h-4 w-4" /></button><button type="button" onClick={() => setProjectModal({ mode: "edit", project: p })} className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted hover:border-brand hover:text-brand" title="Edit"><Pencil className="h-4 w-4" /></button><button type="button" onClick={async () => { if (!window.confirm(`Delete ${p.name}?`)) return; if (p.id) await deleteResource("projects", p.id); setAdminProjects((items) => items.filter((item) => item.slug !== p.slug)); }} className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted hover:border-red-400 hover:text-red-500" title="Delete"><Trash2 className="h-4 w-4" /></button></div>
+                      <RowActions label={p.name} onDelete={() => setAdminProjects((items) => items.filter((item) => item.slug !== p.slug))} />
                     </div>
                   ))}
                 </TableCard>
@@ -449,23 +450,19 @@ export default function Admin() {
             </motion.div>
           </AnimatePresence>
         </main>
-        {projectModal && <ProjectModal mode={projectModal.mode} project={projectModal.project} onClose={() => setProjectModal(null)} onSaved={(updated) => { setAdminProjects((items) => items.map((item) => item.slug === updated.slug ? updated : item)); setProjectModal(null); }} />}
       </div>
     </div>
   );
 }
 
-function TableCard({ title, sub, action, children, onSearch, onAdd }: { title: string; sub: string; action: string; children: React.ReactNode; onSearch?: (value: string) => void; onAdd?: () => void }) {
-  const [searching, setSearching] = useState(false);
+function TableCard({ title, sub, action, children }: { title: string; sub: string; action: string; children: React.ReactNode }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-card">
       <div className="flex flex-wrap items-center justify-between gap-3 p-5">
         <div><h2 className="font-display text-lg font-extrabold">{title}</h2><p className="text-[13px] text-muted">{sub}</p></div>
         <div className="flex gap-2">
-          {onSearch && searching && <input autoFocus onChange={(e) => onSearch(e.target.value)} placeholder="Search..." className="w-36 rounded-xl border border-line px-3 py-2.5 text-[13px]" />}
-          <button type="button" onClick={() => { setSearching((value) => !value); if (searching && onSearch) onSearch(""); }} className="flex items-center gap-1.5 rounded-xl border border-line px-4 py-2.5 text-[13px] font-semibold"><Search className="h-4 w-4" /> Search</button>
+          <button className="flex items-center gap-1.5 rounded-xl border border-line px-4 py-2.5 text-[13px] font-semibold"><Search className="h-4 w-4" /> Search</button>
           <button type="button" onClick={async () => {
-            if (onAdd) { onAdd(); return; }
             const resourceMap: Record<string, string> = { "Add Project": "projects", "Add Service": "services", "Add Member": "team", "Add Testimonial": "testimonials", "New Post": "blogs", "Post a Job": "jobs" };
             const resource = resourceMap[action];
             if (!resource) { window.alert("This action does not create a database record."); return; }
@@ -473,7 +470,7 @@ function TableCard({ title, sub, action, children, onSearch, onAdd }: { title: s
             if (!raw) return;
             try {
               const response = await fetch(`/api/${resource}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: raw });
-              if (!response.ok) throw new Error((await response.json()).error || "Could not save record");
+              if (!response.ok) { const text = await response.text(); const data = text ? JSON.parse(text) : {}; throw new Error(data.error || "Could not save record"); }
               window.alert(`${action} saved to MySQL successfully.`); window.location.reload();
             } catch (error) { window.alert(error instanceof Error ? error.message : "Could not save record"); }
           }} className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> {action}</button>
@@ -486,22 +483,6 @@ function TableCard({ title, sub, action, children, onSearch, onAdd }: { title: s
       </div>
     </div>
   );
-}
-
-function ProjectModal({ mode, project, onClose, onSaved }: { mode: "view" | "edit" | "add"; project: Project; onClose: () => void; onSaved: (project: Project) => void }) {
-  const [form, setForm] = useState(project);
-  const [saving, setSaving] = useState(false);
-  const update = (key: keyof Project, value: string) => setForm((current) => ({ ...current, [key]: value }));
-  const save = async () => {
-    setSaving(true);
-    try {
-      const response = await fetch(mode === "add" ? "/api/projects" : `/api/projects/${project.id}`, { method: mode === "add" ? "POST" : "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: form.slug || form.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""), name: form.name, category: form.category, description: form.description, long_description: form.longDescription, image: form.image, technologies: form.technologies || [], results: form.results || [], services: form.services || [], current_status: form.currentStatus || "Planning", progress: Number(form.progress || 0), start_date: form.startDate || null, expected_completion: form.expectedCompletion || null, assigned_team: form.assignedTeam || [], project_files: form.projectFiles || [], year: form.year || String(new Date().getFullYear()), client: form.client || "", duration: form.duration || "" }) });
-      if (!response.ok) throw new Error("Could not save project");
-      onSaved((await response.json()) as Project);
-    } catch (error) { window.alert(error instanceof Error ? error.message : "Could not save project"); } finally { setSaving(false); }
-  };
-  const fields: [keyof Project, string][] = [["name", "Project name"], ["category", "Services/category"], ["image", "Project image URL"], ["description", "Description"], ["technologies", "Technologies (comma separated)"], ["currentStatus", "Current status"], ["progress", "Progress %"], ["startDate", "Start date"], ["expectedCompletion", "Expected completion"], ["assignedTeam", "Assigned team (comma separated)"], ["projectFiles", "Project files (comma separated)"]];
-  return <div className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/60 p-4" onClick={onClose}><div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}><div className="flex items-center justify-between"><div><p className="section-eyebrow">Project</p><h2 className="font-display text-xl font-extrabold">{mode === "view" ? "Project details" : mode === "add" ? "Add project" : "Edit project"}</h2></div><button type="button" onClick={onClose} className="rounded-lg bg-paper px-3 py-2">✕</button></div><div className="mt-5 grid gap-4 sm:grid-cols-2">{fields.map(([key, label]) => <label key={key} className={key === "description" || key === "longDescription" ? "sm:col-span-2" : ""}><span className="mb-1.5 block text-xs font-bold text-muted">{label}</span>{key === "description" || key === "longDescription" ? <textarea disabled={mode === "view"} rows={key === "longDescription" ? 5 : 3} value={String(form[key] || "")} onChange={(e) => update(key, e.target.value)} className="w-full rounded-xl border border-line px-3 py-2.5 text-sm" /> : <input disabled={mode === "view"} value={String(form[key] || "")} onChange={(e) => update(key, e.target.value)} className="w-full rounded-xl border border-line px-3 py-2.5 text-sm" />}</label>)}</div>{mode !== "view" && <div className="mt-6 flex justify-end gap-2"><button type="button" onClick={onClose} className="rounded-xl border border-line px-4 py-2.5 text-sm font-bold">Cancel</button><button type="button" disabled={saving} onClick={save} className="btn-primary rounded-xl px-5 py-2.5 text-sm font-bold">{saving ? "Saving…" : "Save changes"}</button></div>}</div></div>;
 }
 
 export function AdminIcons() {
