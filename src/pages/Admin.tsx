@@ -110,6 +110,7 @@ export default function Admin() {
 
   useEffect(() => {
     getBlogPosts().then(setBlogPosts).catch(() => setBlogError("Could not load blog posts"));
+    getResource("projects", seedProjects).then((items) => { if (items.length) setAdminProjects(items); });
     getResource("services", seedServices).then(setAdminServices);
     getResource("messages", mockMessages).then(setAdminMessages);
     getResource("quotes", mockQuotes).then(setAdminQuotes);
