@@ -492,9 +492,10 @@ function ProjectModal({ mode, project, onClose, onSaved }: { mode: "view" | "edi
   const save = async () => {
     setSaving(true);
     try {
-      const response = await fetch(`/api/projects/${project.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: form.name, category: form.category, description: form.description, image: form.image, technologies: form.technologies || [], services: form.services || [], current_status: form.currentStatus || "Planning", progress: Number(form.progress || 0), start_date: form.startDate || null, expected_completion: form.expectedCompletion || null, assigned_team: form.assignedTeam || [], project_files: form.projectFiles || [] }) });
+      const createFromSeed = !project.id;
+      const response = await fetch(createFromSeed ? "/api/projects" : `/api/projects/${project.id}`, { method: createFromSeed ? "POST" : "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: form.slug, name: form.name, category: form.category, description: form.description, long_description: form.longDescription || form.description, image: form.image, technologies: form.technologies || [], results: form.results || [], services: form.services || [], current_status: form.currentStatus || "Planning", progress: Number(form.progress || 0), start_date: form.startDate || null, expected_completion: form.expectedCompletion || null, assigned_team: form.assignedTeam || [], project_files: form.projectFiles || [], year: form.year, client: form.client, duration: form.duration }) });
       if (!response.ok) throw new Error("Could not save project");
-      onSaved(form);
+      onSaved((await response.json()) as Project);
     } catch (error) { window.alert(error instanceof Error ? error.message : "Could not save project"); } finally { setSaving(false); }
   };
   const fields: [keyof Project, string][] = [["name", "Project name"], ["category", "Services/category"], ["image", "Project image URL"], ["description", "Description"], ["technologies", "Technologies (comma separated)"], ["currentStatus", "Current status"], ["progress", "Progress %"], ["startDate", "Start date"], ["expectedCompletion", "Expected completion"], ["assignedTeam", "Assigned team (comma separated)"], ["projectFiles", "Project files (comma separated)"]];
