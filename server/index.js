@@ -42,6 +42,16 @@ app.delete("/api/blogs/:id", async (req, res) => {
   try { const [result] = await pool.execute("DELETE FROM blog_posts WHERE id = ?", [req.params.id]); if (!result.affectedRows) return res.status(404).json({ error: "Post not found" }); res.status(204).end(); }
   catch { res.status(400).json({ error: "Could not delete post" }); }
 });
+app.post("/api/projects", async (req, res) => {
+  const p = req.body;
+  const slug = String(p.slug || p.name || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  if (!slug || !p.name || !p.description || !p.image) return res.status(400).json({ error: "Project name, description and image are required" });
+  try {
+    const [result] = await pool.execute("INSERT INTO projects (slug,name,category,description,long_description,image,technologies,results,services,current_status,progress,start_date,expected_completion,assigned_team,project_files,year,client,duration,published) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [slug,p.name,p.category || "Web",p.description,p.long_description || p.description,p.image,JSON.stringify(p.technologies || []),JSON.stringify(p.results || []),JSON.stringify(p.services || []),p.current_status || "Planning",Number(p.progress || 0),p.start_date || null,p.expected_completion || null,JSON.stringify(p.assigned_team || []),JSON.stringify(p.project_files || []),p.year || String(new Date().getFullYear()),p.client || "",p.duration || "",p.published === false ? 0 : 1]);
+    const [rows] = await pool.query("SELECT * FROM projects WHERE id = ?", [result.insertId]); res.status(201).json(rows[0]);
+  } catch (error) { console.error("Create project:", error); res.status(400).json({ error: `Could not create project: ${error.message}` }); }
+});
+
 const resources = {
   projects: { table: "projects", id: "id" },
   services: { table: "services", id: "id" },
