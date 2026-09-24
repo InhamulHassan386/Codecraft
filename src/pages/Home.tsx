@@ -82,10 +82,10 @@ function Hero() {
               initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.3 }}
               className="mt-8 flex flex-col gap-3 sm:flex-row"
             >
-              <button onClick={open} className="btn-primary group flex items-center justify-center gap-2 rounded-xl px-8 py-4 text-sm font-semibold">
+              <button onClick={open} data-magnetic className="btn-primary group flex items-center justify-center gap-2 rounded-xl px-8 py-4 text-sm font-semibold">
                 Get Started <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </button>
-              <Link to="/portfolio" className="btn-ghost-dark group flex items-center justify-center gap-2 rounded-xl px-8 py-4 text-sm font-semibold">
+              <Link to="/portfolio" data-magnetic className="btn-ghost-dark group flex items-center justify-center gap-2 rounded-xl px-8 py-4 text-sm font-semibold">
                 <Play className="h-4 w-4 fill-current" /> View Our Work
               </Link>
             </motion.div>

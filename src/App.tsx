@@ -2,6 +2,7 @@ import { HashRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Navbar, Footer, QuoteProvider, ScrollToTop, BackToTop } from "./components/layout";
 import CustomCursor from "./components/Cursor";
+import MouseAnimation from "./components/MouseAnimation";
 import Home from "./pages/Home";
 import About from "./pages/About";
 import ServicesPage from "./pages/Services";
@@ -45,6 +46,7 @@ function AnimatedRoutes() {
       {!isAdmin && <Footer />}
       {!isAdmin && <BackToTop />}
       <CustomCursor />
+      <MouseAnimation />
     </div>
   );
 }
