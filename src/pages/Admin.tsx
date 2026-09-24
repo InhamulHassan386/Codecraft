@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -6,7 +6,7 @@ import {
   Quote as QuoteIcon, Settings, Search, Bell, ChevronDown, Plus, Eye, Pencil, Trash2,
   TrendingUp, ArrowUpRight, CheckCircle2, Clock3, XCircle, Menu, X, LogOut, Filter,
 } from "lucide-react";
-import { projects as seedProjects, team, blogPosts, jobs, testimonials, type Project } from "../data/content";
+import { projects, team, blogPosts, jobs, testimonials } from "../data/content";
 import { Counter } from "../components/layout";
 import { cn } from "../utils/cn";
 
@@ -14,7 +14,7 @@ type Tab = "dashboard" | "projects" | "services" | "team" | "testimonials" | "bl
 
 const tabs: { id: Tab; label: string; icon: any; badge?: number }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "projects", label: "Projects", icon: FolderKanban, badge: seedProjects.length },
+  { id: "projects", label: "Projects", icon: FolderKanban, badge: projects.length },
   { id: "services", label: "Services", icon: Briefcase, badge: 8 },
   { id: "team", label: "Team", icon: Users, badge: team.length },
   { id: "testimonials", label: "Testimonials", icon: MessageSquare, badge: testimonials.length },
@@ -282,7 +282,18 @@ export default function Admin() {
                 </div>
               )}
 
-              {tab === "projects" && <ProjectManager />}
+              {tab === "projects" && (
+                <TableCard title="Projects" sub="Manage portfolio case studies shown on the website." action="Add Project">
+                  {projects.map((p) => (
+                    <div key={p.slug} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
+                      <img src={p.image} alt={p.name} className="hidden h-12 w-16 rounded-lg object-cover sm:block" />
+                      <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-bold">{p.name}</span><span className="block text-[12px] text-muted">{p.category} · {p.client} · {p.year}</span></span>
+                      <span className="hidden md:block"><StatusPill s="Live" /></span>
+                      <RowActions />
+                    </div>
+                  ))}
+                </TableCard>
+              )}
 
               {tab === "services" && (
                 <TableCard title="Services" sub="Control the 8 services displayed across the site." action="Add Service">
@@ -431,25 +442,6 @@ function TableCard({ title, sub, action, children }: { title: string; sub: strin
       </div>
     </div>
   );
-}
-
-
-function ProjectManager() {
-  const [items, setItems] = useState<Project[]>(seedProjects);
-  const [query, setQuery] = useState("");
-  const [modal, setModal] = useState<{ mode: "add" | "edit" | "view"; item: Project } | null>(null);
-  const load = async () => { try { const response = await fetch("/api/projects"); if (response.ok) { const data = await response.json(); if (data.length) setItems(data); } } catch { /* seed data remains available */ } };
-  useEffect(() => { load(); }, []);
-  const visible = items.filter((p) => `${p.name} ${p.category} ${p.description}`.toLowerCase().includes(query.toLowerCase()));
-  const blank: Project = { slug: "", name: "", category: "Web", description: "", longDescription: "", image: "", technologies: [], results: [], year: String(new Date().getFullYear()), client: "", duration: "" };
-  return <div className="rounded-2xl border border-line bg-white shadow-card"><div className="flex flex-wrap items-center justify-between gap-3 p-5"><div><h2 className="font-display text-lg font-extrabold">Projects</h2><p className="text-[13px] text-muted">Manage projects shown on Home and Portfolio.</p></div><div className="flex gap-2"><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search projects..." className="w-48 rounded-xl border border-line px-3 py-2.5 text-sm" /><button type="button" onClick={() => setModal({ mode: "add", item: blank })} className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> Add Project</button></div></div><div className="border-t border-line">{visible.map((p) => <div key={p.slug} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0"><img src={p.image} alt={p.name} className="hidden h-12 w-16 rounded-lg object-cover sm:block" /><span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold">{p.name}</span><span className="block text-xs text-muted">{p.category} · {p.year} · {p.currentStatus || "Live"}</span></span><div className="flex gap-1.5"><button type="button" onClick={() => setModal({ mode: "view", item: p })} className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted hover:border-brand hover:text-brand"><Eye className="h-4 w-4" /></button><button type="button" onClick={() => setModal({ mode: "edit", item: p })} className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted hover:border-brand hover:text-brand"><Pencil className="h-4 w-4" /></button><button type="button" onClick={async () => { if (!confirm(`Delete ${p.name}?`)) return; if (p.id) await fetch(`/api/projects/${p.id}`, { method: "DELETE" }); setItems((all) => all.filter((x) => x.slug !== p.slug)); }} className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted hover:border-red-400 hover:text-red-500"><Trash2 className="h-4 w-4" /></button></div></div>)}</div>{modal && <ProjectForm mode={modal.mode} project={modal.item} onClose={() => setModal(null)} onSaved={(saved) => { setItems((all) => all.some((x) => x.slug === saved.slug) ? all.map((x) => x.slug === saved.slug ? saved : x) : [saved, ...all]); setModal(null); }} />}</div>;
-}
-
-function ProjectForm({ mode, project, onClose, onSaved }: { mode: "add" | "edit" | "view"; project: Project; onClose: () => void; onSaved: (project: Project) => void }) {
-  const [form, setForm] = useState(project); const [saving, setSaving] = useState(false); const set = (key: keyof Project, value: string) => setForm((x) => ({ ...x, [key]: value }));
-  const save = async () => { setSaving(true); const payload = { slug: form.slug || form.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"), name: form.name, category: form.category, description: form.description, long_description: form.longDescription || form.description, image: form.image, technologies: form.technologies || [], results: form.results || [], year: form.year, client: form.client, duration: form.duration, published: true }; try { const response = await fetch(mode === "edit" && form.id ? `/api/projects/${form.id}` : "/api/projects", { method: mode === "edit" && form.id ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }); const data = await response.json(); if (!response.ok) throw new Error(data.error || "Could not save project"); onSaved(data); } catch (e) { alert(e instanceof Error ? e.message : "Could not save project"); } finally { setSaving(false); } };
-  const fields: [keyof Project, string][] = [["name", "Project name"], ["image", "Project image URL"], ["description", "Description"], ["longDescription", "Full description"], ["category", "Service/category"], ["year", "Year"], ["client", "Client"], ["duration", "Duration"]];
-  return <div className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/60 p-4" onClick={onClose}><div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}><div className="flex items-center justify-between"><h2 className="font-display text-xl font-extrabold">{mode === "view" ? "View Project" : mode === "add" ? "Add Project" : "Edit Project"}</h2><button type="button" onClick={onClose} className="rounded-lg bg-paper px-3 py-2">✕</button></div><div className="mt-5 grid gap-4 sm:grid-cols-2">{fields.map(([key, label]) => <label key={key} className={key === "description" || key === "longDescription" ? "sm:col-span-2" : ""}><span className="mb-1 block text-xs font-bold text-muted">{label}</span>{key === "description" || key === "longDescription" ? <textarea disabled={mode === "view"} rows={3} value={String(form[key] || "")} onChange={(e) => set(key, e.target.value)} className="w-full rounded-xl border border-line px-3 py-2.5 text-sm" /> : <input disabled={mode === "view"} value={String(form[key] || "")} onChange={(e) => set(key, e.target.value)} className="w-full rounded-xl border border-line px-3 py-2.5 text-sm" />}</label>)}</div>{mode !== "view" && <div className="mt-6 flex justify-end gap-2"><button type="button" onClick={onClose} className="rounded-xl border border-line px-4 py-2.5 text-sm font-bold">Cancel</button><button type="button" disabled={saving} onClick={save} className="btn-primary rounded-xl px-5 py-2.5 text-sm font-bold">{saving ? "Saving..." : "Save Project"}</button></div>}</div></div>;
 }
 
 export function AdminIcons() {
