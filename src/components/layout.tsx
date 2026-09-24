@@ -424,10 +424,10 @@ export function CTASection() {
         </Reveal>
         <Reveal delay={0.24}>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <button onClick={open} data-magnetic className="btn-primary group flex items-center gap-2 rounded-xl px-8 py-4 text-sm font-semibold">
+            <button onClick={open} className="btn-primary group flex items-center gap-2 rounded-xl px-8 py-4 text-sm font-semibold">
               Get a Quote <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </button>
-            <Link to="/portfolio" data-magnetic className="btn-ghost-dark flex items-center gap-2 rounded-xl px-8 py-4 text-sm font-semibold">
+            <Link to="/portfolio" className="btn-ghost-dark flex items-center gap-2 rounded-xl px-8 py-4 text-sm font-semibold">
               View Our Work
             </Link>
           </div>
@@ -598,7 +598,6 @@ export function BackToTop() {
         <motion.button
           initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          data-magnetic
           className="fixed bottom-6 right-6 z-40 flex h-11 w-11 items-center justify-center rounded-xl bg-ink text-white shadow-dark-card transition hover:bg-brand"
           aria-label="Back to top"
         >
