@@ -86,6 +86,9 @@ export default function Admin() {
   const [projectSearch, setProjectSearch] = useState("");
   const [imageUploaded, setImageUploaded] = useState(false);
   const [uploadedImageData, setUploadedImageData] = useState("");
+  const [imageSource, setImageSource] = useState<"upload" | "url">("upload");
+  const [imageError, setImageError] = useState("");
+  const [imagePreview, setImagePreview] = useState("");
 
   useEffect(() => {
     fetch("/api/projects").then((response) => response.ok ? response.json() : Promise.reject()).then((rows) => {
@@ -102,6 +105,7 @@ export default function Admin() {
     else if (imageFile?.size) image = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(imageFile);
     });
+    if (!image) { setImageError("Please select an image or provide a valid image URL."); return; }
     const data = { ...raw, image, name: raw.name || raw.title, description: raw.description || "", long_description: raw.long_description || raw.description || "", technologies: JSON.stringify(String(raw.technologies || "").split(",").map((v) => v.trim()).filter(Boolean)), results: JSON.stringify(String(raw.results || "").split(",").map((v) => v.trim()).filter(Boolean)), duration: raw.duration || "Not specified", published: 1 };
     delete (data as any).imageFile;
     delete (data as any).title;
@@ -476,17 +480,22 @@ export default function Admin() {
             <label className="text-sm font-semibold sm:col-span-2">Detailed description<textarea name="long_description" rows={3} defaultValue={projectModal.item?.long_description || projectModal.item?.description || ""} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>
           </div>
           <div className="mt-3 rounded-xl border border-line p-4">
-            <p className="text-sm font-semibold">Project Image</p>
-            <label className="mt-3 flex items-center gap-2 text-sm font-medium"><input type="radio" name="imageSource" value="url" defaultChecked /> Image URL</label>
-            <input name="image" defaultValue={projectModal.item?.image || ""} placeholder="https://example.com/image.jpg" className="mt-2 w-full rounded-xl border border-line px-3 py-2.5 text-sm font-normal" />
-            <div className="my-3 text-center text-xs font-semibold text-muted">OR</div>
-            <label className="flex items-center gap-2 text-sm font-medium"><input type="radio" name="imageSource" value="file" /> Upload Image</label>
-            <input id="project-image-file" name="imageFile" type="file" accept="image/*" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { setUploadedImageData(String(reader.result)); setImageUploaded(true); }; reader.readAsDataURL(file); }} />
-            <p className="mt-2 text-xs text-muted">Upload button se apne computer/drive se image select karein.</p>
-            <div className="mt-3 flex gap-2"><button type="button" onClick={() => document.getElementById("project-image-file")?.click()} className="rounded-xl border border-line px-4 py-2 text-sm font-semibold hover:border-brand hover:text-brand">Upload</button><button type="submit" className="btn-primary rounded-xl px-4 py-2 text-sm font-semibold">Save Image</button></div>
-            {imageUploaded && <p className="mt-2 text-xs font-semibold text-emerald-600">Image ready — Save Image par click karein.</p>}
+            <p className="text-sm font-semibold">Image Source</p>
+            <div className="mt-3 grid grid-cols-2 rounded-xl bg-paper p-1">
+              <button type="button" onClick={() => { setImageSource("upload"); setImageError(""); }} className={cn("rounded-lg px-3 py-2 text-sm font-semibold", imageSource === "upload" ? "bg-white shadow-card" : "text-muted")}>Upload Image</button>
+              <button type="button" onClick={() => { setImageSource("url"); setImageError(""); }} className={cn("rounded-lg px-3 py-2 text-sm font-semibold", imageSource === "url" ? "bg-white shadow-card" : "text-muted")}>Image URL</button>
+            </div>
+            {imageSource === "upload" ? <>
+              <input id="project-image-file" name="imageFile" type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (!file) return; if (!file.type.match(/^image\/(jpeg|png|webp)$/)) return setImageError("Only JPG, PNG and WEBP files are supported."); if (file.size > 5 * 1024 * 1024) return setImageError("Maximum file size is 5 MB."); setImageError(""); const reader = new FileReader(); reader.onload = () => { setUploadedImageData(String(reader.result)); setImagePreview(String(reader.result)); }; reader.readAsDataURL(file); }} />
+              <div onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); const file = e.dataTransfer.files?.[0]; if (file) { const input = document.getElementById("project-image-file") as HTMLInputElement; const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files; input.dispatchEvent(new Event("change", { bubbles: true })); } }} className="mt-3 rounded-xl border-2 border-dashed border-line p-5 text-center">
+                <p className="text-2xl">⇧</p><p className="mt-1 text-sm font-semibold">Drag &amp; drop image</p><p className="text-xs text-muted">or</p><button type="button" onClick={() => document.getElementById("project-image-file")?.click()} className="mt-2 rounded-lg border border-line px-4 py-2 text-sm font-semibold">Browse Files</button><p className="mt-2 text-xs text-muted">JPG, PNG, WEBP · Maximum 5 MB</p>
+              </div>
+            </> : <label className="mt-3 block text-sm font-semibold">Image URL<input name="image" defaultValue={projectModal.item?.image || ""} placeholder="https://example.com/image.jpg" onChange={(e) => { const value = e.target.value; setImagePreview(value); try { new URL(value); setImageError(""); } catch { setImageError(value ? "Please enter a valid URL." : ""); } }} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 text-sm font-normal" /></label>}
+            {imagePreview && <img src={imagePreview} onError={() => setImageError("Image could not be loaded.")} onLoad={() => setImageError("")} className="mt-3 max-h-32 w-full rounded-lg object-contain" alt="Preview" />}
+            {imageError && <p className="mt-2 text-xs font-semibold text-red-600">{imageError}</p>}
+            {imagePreview && <button type="button" onClick={() => { setImagePreview(""); setUploadedImageData(""); setImageError(""); }} className="mt-2 text-xs font-semibold text-red-600">Remove image</button>}
           </div>
-          <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setProjectModal(null)} className="rounded-xl border border-line px-4 py-2.5 font-semibold">Cancel</button><button className="btn-primary rounded-xl px-5 py-2.5 font-semibold">Save Project</button></div>
+          <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setProjectModal(null)} className="rounded-xl border border-line px-4 py-2.5 font-semibold">Cancel</button><button disabled={!!imageError || (!imagePreview && !projectModal.item?.image)} className="btn-primary rounded-xl px-5 py-2.5 font-semibold disabled:cursor-not-allowed disabled:opacity-50">Save Project</button></div>
         </form>
       </div>}
     </div>
