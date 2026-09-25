@@ -90,6 +90,7 @@ export default function Admin() {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [sidebar, setSidebar] = useState(false);
   const [authed, setAuthed] = useState(false);
+  const [adminMenu, setAdminMenu] = useState(false);
   const [projectRows, setProjectRows] = useState<any[]>(projects);
   const [projectModal, setProjectModal] = useState<{ mode: "add" | "edit"; item?: any } | null>(null);
   const [projectMessage, setProjectMessage] = useState("");
@@ -190,11 +191,7 @@ export default function Admin() {
             <Bell className="h-4.5 w-4.5 h-5 w-5 text-charcoal" />
             <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
           </button>
-          <button className="flex items-center gap-2 rounded-xl border border-line py-1.5 pl-1.5 pr-3">
-            <img src={team[0].image} alt="Admin" className="h-7 w-7 rounded-lg object-cover" />
-            <span className="hidden text-left sm:block"><span className="block text-[12.5px] font-bold leading-none">Admin</span><span className="mt-0.5 block text-[10.5px] text-muted">Super Admin</span></span>
-            <ChevronDown className="h-4 w-4 text-muted" />
-          </button>
+          <div className="relative"><button onClick={() => setAdminMenu((open) => !open)} className="flex items-center gap-2 rounded-xl border border-line py-1.5 pl-1.5 pr-3"><img src={team[0].image} alt="Admin" className="h-7 w-7 rounded-lg object-cover" /><span className="hidden text-left sm:block"><span className="block text-[12.5px] font-bold leading-none">Admin</span><span className="mt-0.5 block text-[10.5px] text-muted">Super Admin</span></span><ChevronDown className="h-4 w-4 text-muted" /></button>{adminMenu && <div className="absolute right-0 top-12 z-50 w-64 rounded-2xl border border-line bg-white p-3 shadow-card"><p className="px-3 py-2 text-xs font-bold text-muted">Admin Profile</p><p className="px-3 text-sm font-bold">Admin</p><p className="px-3 text-xs text-muted">admin@codecraftsolutions.com</p><button onClick={() => setTab("settings")} className="mt-3 w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-paper">Manage Admins & Permissions</button><button onClick={() => setTab("messages")} className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-paper">Activity Log</button><button onClick={() => setTab("settings")} className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-paper">Change Password</button></div>}</div>
           <Link to="/" className="hidden h-10 items-center gap-1.5 rounded-xl border border-line px-4 text-[13px] font-semibold text-charcoal transition hover:border-brand hover:text-brand sm:flex">
             ← Website
           </Link>
