@@ -86,7 +86,7 @@ export default function Admin() {
 
   useEffect(() => {
     fetch("/api/projects").then((response) => response.ok ? response.json() : Promise.reject()).then((rows) => {
-      if (Array.isArray(rows)) setProjectRows(rows);
+      if (Array.isArray(rows) && rows.length > 0) setProjectRows(rows);
     }).catch(() => setProjectMessage("Projects load nahi huay. Backend aur MySQL start karein."));
   }, []);
 
