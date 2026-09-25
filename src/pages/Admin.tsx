@@ -217,7 +217,7 @@ export default function Admin() {
                 <t.icon className="h-[18px] w-[18px]" />
                 <span className="flex-1 text-left">{t.label}</span>
                 {(t.badge != null || ["projects","services","team","testimonials","blog","careers","messages","quotes"].includes(t.id)) && (
-                  <span className={cn("rounded-full px-2 py-0.5 text-[10.5px] font-bold", tab === t.id ? "bg-white/15 text-white" : "bg-paper-2 text-charcoal")}>{recordCounts[t.id === "blog" ? "blogs" : t.id === "careers" ? "jobs" : t.id] ?? (t.id === "projects" ? projectRows.length : 0)}</span>
+                  <span className={cn("rounded-full px-2 py-0.5 text-[10.5px] font-bold", tab === t.id ? "bg-white/15 text-white" : "bg-brand-light text-brand")}>{recordCounts[t.id === "blog" ? "blogs" : t.id === "careers" ? "jobs" : t.id] ?? (t.id === "projects" ? projectRows.length : 0)}</span>
                 )}
               </button>
             ))}
