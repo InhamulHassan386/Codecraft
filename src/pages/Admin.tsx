@@ -66,12 +66,12 @@ function StatusPill({ s }: { s: string }) {
   return <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold", map[s] || "bg-slate-100 text-slate-600")}><span className="h-1.5 w-1.5 rounded-full bg-current" />{s}</span>;
 }
 
-function RowActions() {
+function RowActions({ onEdit, onDelete, onView }: { onEdit?: () => void; onDelete?: () => void; onView?: () => void }) {
   return (
     <div className="flex justify-end gap-1.5">
-      <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-brand hover:text-brand" title="View"><Eye className="h-4 w-4" /></button>
-      <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-brand hover:text-brand" title="Edit"><Pencil className="h-4 w-4" /></button>
-      <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-red-400 hover:text-red-500" title="Delete"><Trash2 className="h-4 w-4" /></button>
+      <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-brand hover:text-brand" onClick={onView} title="View"><Eye className="h-4 w-4" /></button>
+      <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-brand hover:text-brand" onClick={onEdit} title="Edit"><Pencil className="h-4 w-4" /></button>
+      <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-red-400 hover:text-red-500" onClick={onDelete} title="Delete"><Trash2 className="h-4 w-4" /></button>
     </div>
   );
 }
@@ -80,6 +80,32 @@ export default function Admin() {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [sidebar, setSidebar] = useState(false);
   const [authed, setAuthed] = useState(false);
+  const [projectRows, setProjectRows] = useState<any[]>(projects);
+  const [projectModal, setProjectModal] = useState<{ mode: "add" | "edit"; item?: any } | null>(null);
+  const [projectMessage, setProjectMessage] = useState("");
+
+  const saveProject = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const data = Object.fromEntries(new FormData(event.currentTarget).entries());
+    try {
+      const editing = projectModal?.mode === "edit";
+      const response = await fetch(editing ? `/api/projects/${projectModal?.item.id}` : "/api/projects", {
+        method: editing ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error("API unavailable");
+      const saved = await response.json();
+      setProjectRows((rows) => editing ? rows.map((row) => row.id === saved.id ? saved : row) : [saved, ...rows]);
+      setProjectModal(null); setProjectMessage("");
+    } catch { setProjectMessage("Backend/database connect nahi hai. MySQL aur API start karein."); }
+  };
+  const deleteProject = async (item: any) => {
+    if (!window.confirm(`Delete ${item.name || item.title}?`)) return;
+    try {
+      const response = await fetch(`/api/projects/${item.id}`, { method: "DELETE" });
+      if (!response.ok) throw new Error();
+      setProjectRows((rows) => rows.filter((row) => row.id !== item.id));
+    } catch { setProjectMessage("Project delete nahi hua. API/database check karein."); }
+  };
 
   const stats = useMemo(() => [
     { label: "Total Projects", value: 52, icon: FolderKanban, delta: "+4 this month", color: "bg-brand" },
@@ -190,7 +216,7 @@ export default function Admin() {
                     </div>
                     <div className="flex gap-2">
                       <button className="flex items-center gap-1.5 rounded-xl border border-line bg-white px-4 py-2.5 text-[13px] font-semibold"><Filter className="h-4 w-4" /> Last 30 days</button>
-                      <button className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> New Project</button>
+                      <button onClick={() => { setTab("projects"); setProjectModal({ mode: "add" }); }} className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> New Project</button>
                     </div>
                   </div>
 
@@ -283,16 +309,19 @@ export default function Admin() {
               )}
 
               {tab === "projects" && (
-                <TableCard title="Projects" sub="Manage portfolio case studies shown on the website." action="Add Project">
-                  {projects.map((p) => (
+                <>
+                <TableCard title="Projects" sub="Manage portfolio case studies shown on the website." action="Add Project" onAction={() => setProjectModal({ mode: "add" })}>
+                  {projectRows.map((p) => (
                     <div key={p.slug} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
                       <img src={p.image} alt={p.name} className="hidden h-12 w-16 rounded-lg object-cover sm:block" />
                       <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-bold">{p.name}</span><span className="block text-[12px] text-muted">{p.category} · {p.client} · {p.year}</span></span>
                       <span className="hidden md:block"><StatusPill s="Live" /></span>
-                      <RowActions />
+                      <RowActions onEdit={() => setProjectModal({ mode: "edit", item: p })} onDelete={() => deleteProject(p)} onView={() => setProjectModal({ mode: "edit", item: p })} />
                     </div>
                   ))}
                 </TableCard>
+                {projectMessage && <p className="p-4 text-sm text-red-600">{projectMessage}</p>}
+                </>
               )}
 
               {tab === "services" && (
@@ -421,11 +450,18 @@ export default function Admin() {
           </AnimatePresence>
         </main>
       </div>
+      {projectModal && <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4" role="dialog" aria-modal="true">
+        <form onSubmit={saveProject} className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+          <div className="flex items-center justify-between"><h2 className="font-display text-xl font-extrabold">{projectModal.mode === "add" ? "Add Project" : "Edit Project"}</h2><button type="button" onClick={() => setProjectModal(null)} className="text-2xl text-muted">×</button></div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">{[["title","Project title"],["slug","Slug"],["category","Category"],["client","Client"],["year","Year"],["image","Image URL"]].map(([name,label]) => <label key={name} className="text-sm font-semibold">{label}<input name={name} required={name === "title"} defaultValue={projectModal.item?.[name] || projectModal.item?.name || ""} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>)}</div>
+          <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setProjectModal(null)} className="rounded-xl border border-line px-4 py-2.5 font-semibold">Cancel</button><button className="btn-primary rounded-xl px-5 py-2.5 font-semibold">Save Project</button></div>
+        </form>
+      </div>}
     </div>
   );
 }
 
-function TableCard({ title, sub, action, children }: { title: string; sub: string; action: string; children: React.ReactNode }) {
+function TableCard({ title, sub, action, onAction, children }: { title: string; sub: string; action: string; onAction?: () => void; children: React.ReactNode }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-card">
       <div className="flex flex-wrap items-center justify-between gap-3 p-5">
