@@ -48,6 +48,7 @@ app.post("/api/auth/login", async (req, res) => {
 });
 
 const fields = "id, slug, title, excerpt, category, date, read_time AS readTime, image, author, author_role AS authorRole, featured";
+app.get("/api/dashboard/revenue", async (_req, res) => { try { const [rows] = await pool.query("SELECT label, amount, recorded_at AS recordedAt FROM revenue_records ORDER BY recorded_at"); res.json(rows); } catch { res.status(503).json({ error: "Revenue data unavailable" }); } });
 app.get("/api/health", async (_req, res) => {
   try { await pool.query("SELECT 1"); res.json({ ok: true, database: "mysql" }); }
   catch { res.status(503).json({ ok: false, database: "unavailable" }); }

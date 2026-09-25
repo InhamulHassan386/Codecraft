@@ -89,8 +89,11 @@ export default function Admin() {
   const [imageSource, setImageSource] = useState<"upload" | "url">("upload");
   const [imageError, setImageError] = useState("");
   const [imagePreview, setImagePreview] = useState("");
+  const [revenueData, setRevenueData] = useState<{ label: string; amount: number }[]>([]);
+  const [revenuePeriod, setRevenuePeriod] = useState("30");
 
   useEffect(() => {
+    fetch("/api/dashboard/revenue").then((r) => r.ok ? r.json() : Promise.reject()).then((rows) => setRevenueData(rows.map((r: any) => ({ label: r.label, amount: Number(r.amount) })))).catch(() => setRevenueData(revenue.map((v, i) => ({ label: ["J","F","M","A","M","J","J","A","S","O","N","D"][i], amount: v * 1000 }))));
     fetch("/api/projects").then((response) => response.ok ? response.json() : Promise.reject()).then((rows) => {
       if (Array.isArray(rows) && rows.length > 0) setProjectRows(rows);
     }).catch(() => setProjectMessage("Projects load nahi huay. Backend aur MySQL start karein."));
@@ -237,7 +240,7 @@ export default function Admin() {
                       <p className="text-sm text-muted">Here's what's happening across your website today.</p>
                     </div>
                     <div className="flex gap-2">
-                      <button className="flex items-center gap-1.5 rounded-xl border border-line bg-white px-4 py-2.5 text-[13px] font-semibold"><Filter className="h-4 w-4" /> Last 30 days</button>
+                      <label className="flex items-center gap-1.5 rounded-xl border border-line bg-white px-3 py-2.5 text-[13px] font-semibold"><Filter className="h-4 w-4" /><select value={revenuePeriod} onChange={(e) => setRevenuePeriod(e.target.value)} className="bg-transparent outline-none"><option value="30">Last 30 days</option><option value="90">Last 90 days</option><option value="365">This year</option></select></label>
                       <button onClick={() => { setTab("projects"); setProjectModal({ mode: "add" }); }} className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> New Project</button>
                     </div>
                   </div>
@@ -260,14 +263,14 @@ export default function Admin() {
                         <span className="flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-[12px] font-bold text-emerald-600"><ArrowUpRight className="h-3.5 w-3.5" /> +24.6%</span>
                       </div>
                       <div className="mt-5 flex h-44 items-end gap-2">
-                        {revenue.map((v, i) => (
+                        {revenueData.map((item, i) => (
                           <div key={i} className="group relative flex-1">
                             <motion.div
-                              initial={{ height: 0 }} animate={{ height: `${(v / 120) * 100}%` }} transition={{ duration: 0.7, delay: i * 0.05 }}
+                              initial={{ height: 0 }} animate={{ height: `${(item.amount / Math.max(...revenueData.map((r) => r.amount), 1)) * 100}%` }} transition={{ duration: 0.7, delay: i * 0.05 }}
                               className={cn("w-full rounded-t-lg", i === revenue.length - 1 ? "bg-brand" : "bg-brand/15 group-hover:bg-brand/40")}
                               style={{ minHeight: 8 }}
                             />
-                            {i % 2 === 0 && <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] font-semibold text-muted">{["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"][i]}</span>}
+                            {i % 2 === 0 && <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] font-semibold text-muted">{item.label}</span>}
                           </div>
                         ))}
                       </div>
