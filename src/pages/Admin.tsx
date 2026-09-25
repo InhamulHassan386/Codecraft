@@ -469,13 +469,15 @@ export default function Admin() {
         <form onSubmit={saveProject} className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
           <div className="flex items-center justify-between"><h2 className="font-display text-xl font-extrabold">{projectModal.mode === "add" ? "Add Project" : "Edit Project"}</h2><button type="button" onClick={() => setProjectModal(null)} className="text-2xl text-muted">×</button></div>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            {[["name","Project name"],["slug","Slug"],["category","Category"],["client","Client"],["year","Year"],["duration","Duration"],["image","Image URL (optional)"],["technologies","Technologies (comma separated)"],["results","Results (comma separated)"],["description","Short description"]].map(([name,label]) => <label key={name} className="text-sm font-semibold">{label}<input name={name} required={!["image","technologies","results","duration"].includes(name)} defaultValue={projectModal.item?.[name] || (name === "technologies" ? (Array.isArray(projectModal.item?.technologies) ? projectModal.item.technologies.join(", ") : "") : (name === "results" ? (Array.isArray(projectModal.item?.results) ? projectModal.item.results.join(", ") : "") : ""))} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>)}
+            {[["name","Project name"],["slug","Slug"],["category","Category"],["client","Client"],["year","Year"],["duration","Duration"],["technologies","Technologies (comma separated)"],["results","Results (comma separated)"],["description","Short description"]].map(([name,label]) => <label key={name} className="text-sm font-semibold">{label}<input name={name} required={!["image","technologies","results","duration"].includes(name)} defaultValue={projectModal.item?.[name] || (name === "technologies" ? (Array.isArray(projectModal.item?.technologies) ? projectModal.item.technologies.join(", ") : "") : (name === "results" ? (Array.isArray(projectModal.item?.results) ? projectModal.item.results.join(", ") : "") : ""))} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>)}
             <label className="text-sm font-semibold sm:col-span-2">Detailed description<textarea name="long_description" rows={3} defaultValue={projectModal.item?.long_description || projectModal.item?.description || ""} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>
           </div>
-          <label className="mt-3 block text-sm font-semibold">Choose image from computer/drive
-            <input name="imageFile" type="file" accept="image/*" className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 text-sm font-normal" />
-            <span className="mt-1 block text-xs font-normal text-muted">URL ya computer se file — dono mein se koi ek use karein.</span>
-          </label>
+          <div className="mt-3 rounded-xl border border-line p-3">
+            <label className="block text-sm font-semibold">Image URL / Choose File <span className="font-normal text-muted">(optional)</span></label>
+            <input name="image" defaultValue={projectModal.item?.image || ""} placeholder="Paste image URL (optional)" className="mt-2 w-full rounded-xl border border-line px-3 py-2.5 text-sm font-normal" />
+            <div className="mt-2 flex items-center gap-3"><span className="text-xs text-muted">or</span><input name="imageFile" type="file" accept="image/*" className="w-full rounded-xl border border-line px-3 py-2.5 text-sm font-normal" /></div>
+            <span className="mt-1 block text-xs font-normal text-muted">URL ya Choose File mein se koi ek use karein.</span>
+          </div>
           <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setProjectModal(null)} className="rounded-xl border border-line px-4 py-2.5 font-semibold">Cancel</button><button className="btn-primary rounded-xl px-5 py-2.5 font-semibold">Save Project</button></div>
         </form>
       </div>}
