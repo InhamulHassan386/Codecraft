@@ -8,6 +8,8 @@ export default function AdminManagement() {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [permissionAdmin, setPermissionAdmin] = useState<Admin | null>(null);
+  const [logs, setLogs] = useState<any[]>([]);
+  const [password, setPassword] = useState("");
   const [permissions, setPermissions] = useState<string[]>([]);
   const permissionList = ["projects", "services", "team", "blog", "messages", "quotes", "careers"];
   const openPermissions = async (admin: Admin) => { const response = await fetch(`/api/admins/${admin.id}/permissions`); setPermissions(response.ok ? await response.json() : []); setPermissionAdmin(admin); };
@@ -22,7 +24,7 @@ export default function AdminManagement() {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { void loadAdmins(); }, []);
+  useEffect(() => { void loadAdmins(); fetch("/api/activity-logs").then((r) => r.ok ? r.json() : []).then(setLogs); }, []);
 
   const updateAdmin = async (admin: Admin, changes: Partial<Admin>) => {
     const response = await fetch(`/api/admins/${admin.id}`, {
