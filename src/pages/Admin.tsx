@@ -50,6 +50,16 @@ const mockApps = [
 
 const revenue = [42, 58, 45, 70, 62, 84, 76, 92, 88, 104, 98, 120];
 
+async function compressProjectImage(file: File): Promise<string> {
+  const source = await createImageBitmap(file);
+  const max = 1400;
+  const scale = Math.min(1, max / Math.max(source.width, source.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(source.width * scale)); canvas.height = Math.max(1, Math.round(source.height * scale));
+  canvas.getContext("2d")!.drawImage(source, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/webp", 0.78);
+}
+
 function StatusPill({ s }: { s: string }) {
   const map: Record<string, string> = {
     New: "bg-brand-light text-brand",
@@ -491,7 +501,7 @@ export default function Admin() {
               <button type="button" onClick={() => { setImageSource("url"); setImageError(""); }} className={cn("rounded-lg px-3 py-2 text-sm font-semibold", imageSource === "url" ? "bg-white shadow-card" : "text-muted")}>Image URL</button>
             </div>
             {imageSource === "upload" ? <>
-              <input id="project-image-file" name="imageFile" type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (!file) return; if (!file.type.match(/^image\/(jpeg|png|webp)$/)) return setImageError("Only JPG, PNG and WEBP files are supported."); if (file.size > 5 * 1024 * 1024) return setImageError("Maximum file size is 5 MB."); setImageError(""); const reader = new FileReader(); reader.onload = () => { setUploadedImageData(String(reader.result)); setImagePreview(String(reader.result)); }; reader.readAsDataURL(file); }} />
+              <input id="project-image-file" name="imageFile" type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (!file) return; if (!file.type.match(/^image\/(jpeg|png|webp)$/)) return setImageError("Only JPG, PNG and WEBP files are supported."); if (file.size > 5 * 1024 * 1024) return setImageError("Maximum file size is 5 MB."); setImageError(""); compressProjectImage(file).then((compressed) => { setUploadedImageData(compressed); setImagePreview(compressed); }).catch(() => setImageError("Image could not be processed.")); }} />
               <div onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); const file = e.dataTransfer.files?.[0]; if (file) { const input = document.getElementById("project-image-file") as HTMLInputElement; const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files; input.dispatchEvent(new Event("change", { bubbles: true })); } }} className="mt-3 rounded-xl border-2 border-dashed border-line p-5 text-center">
                 <p className="text-2xl">⇧</p><p className="mt-1 text-sm font-semibold">Drag &amp; drop image</p><p className="text-xs text-muted">or</p><button type="button" onClick={() => document.getElementById("project-image-file")?.click()} className="mt-2 rounded-lg border border-line px-4 py-2 text-sm font-semibold">Browse Files</button><p className="mt-2 text-xs text-muted">JPG, PNG, WEBP · Maximum 5 MB</p>
               </div>
