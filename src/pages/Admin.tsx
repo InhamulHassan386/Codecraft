@@ -84,6 +84,7 @@ export default function Admin() {
   const [projectModal, setProjectModal] = useState<{ mode: "add" | "edit"; item?: any } | null>(null);
   const [projectMessage, setProjectMessage] = useState("");
   const [projectSearch, setProjectSearch] = useState("");
+  const [imageUploaded, setImageUploaded] = useState(false);
 
   useEffect(() => {
     fetch("/api/projects").then((response) => response.ok ? response.json() : Promise.reject()).then((rows) => {
@@ -478,8 +479,9 @@ export default function Admin() {
             <input name="image" defaultValue={projectModal.item?.image || ""} placeholder="https://example.com/image.jpg" className="mt-2 w-full rounded-xl border border-line px-3 py-2.5 text-sm font-normal" />
             <div className="my-3 text-center text-xs font-semibold text-muted">OR</div>
             <label className="flex items-center gap-2 text-sm font-medium"><input type="radio" name="imageSource" value="file" /> Upload Image</label>
-            <input name="imageFile" type="file" accept="image/*" className="mt-2 w-full rounded-xl border border-line px-3 py-2.5 text-sm font-normal" />
-            <button type="submit" className="mt-3 rounded-xl border border-line px-4 py-2 text-sm font-semibold hover:border-brand hover:text-brand">Upload / Save Image</button>
+            <input id="project-image-file" name="imageFile" type="file" accept="image/*" onChange={() => setImageUploaded(false)} className="mt-2 w-full rounded-xl border border-line px-3 py-2.5 text-sm font-normal" />
+            <div className="mt-3 flex gap-2"><button type="button" onClick={() => { const file = (document.getElementById("project-image-file") as HTMLInputElement)?.files?.[0]; if (file) setImageUploaded(true); }} className="rounded-xl border border-line px-4 py-2 text-sm font-semibold hover:border-brand hover:text-brand">Upload</button><button type="submit" className="btn-primary rounded-xl px-4 py-2 text-sm font-semibold">Save Image</button></div>
+            {imageUploaded && <p className="mt-2 text-xs font-semibold text-emerald-600">Image ready — Save Image par click karein.</p>}
           </div>
           <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setProjectModal(null)} className="rounded-xl border border-line px-4 py-2.5 font-semibold">Cancel</button><button className="btn-primary rounded-xl px-5 py-2.5 font-semibold">Save Project</button></div>
         </form>
