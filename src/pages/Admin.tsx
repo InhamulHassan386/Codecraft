@@ -51,7 +51,7 @@ const mockApps = [
 const revenue = [42, 58, 45, 70, 62, 84, 76, 92, 88, 104, 98, 120];
 
 async function compressProjectImage(file: File): Promise<string> {
-  const source = await createImageBitmap(file);
+  const source = await new Promise<HTMLImageElement>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => { const image = new Image(); image.onload = () => resolve(image); image.onerror = reject; image.src = String(reader.result); }; reader.onerror = reject; reader.readAsDataURL(file); });
   const max = 1400;
   const scale = Math.min(1, max / Math.max(source.width, source.height));
   const canvas = document.createElement("canvas");
