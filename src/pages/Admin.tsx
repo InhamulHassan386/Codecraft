@@ -514,7 +514,7 @@ function TableCard({ title, sub, action, onAction, searchValue, onSearch, childr
         <div><h2 className="font-display text-lg font-extrabold">{title}</h2><p className="text-[13px] text-muted">{sub}</p></div>
         <div className="flex gap-2">
           {onSearch ? <label className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" /><input value={searchValue || ""} onChange={(event) => onSearch(event.target.value)} placeholder="Search..." className="w-36 rounded-xl border border-line py-2.5 pl-9 pr-3 text-[13px]" /></label> : <button className="flex items-center gap-1.5 rounded-xl border border-line px-4 py-2.5 text-[13px] font-semibold"><Search className="h-4 w-4" /> Search</button>}
-          <button className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> {action}</button>
+          <button onClick={onAction} className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> {action}</button>
         </div>
       </div>
       <div className="border-t border-line">{children}</div>
