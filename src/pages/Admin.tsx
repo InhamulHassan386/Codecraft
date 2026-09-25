@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -84,6 +84,12 @@ export default function Admin() {
   const [projectModal, setProjectModal] = useState<{ mode: "add" | "edit"; item?: any } | null>(null);
   const [projectMessage, setProjectMessage] = useState("");
 
+  useEffect(() => {
+    fetch("/api/projects").then((response) => response.ok ? response.json() : Promise.reject()).then((rows) => {
+      if (Array.isArray(rows)) setProjectRows(rows);
+    }).catch(() => setProjectMessage("Projects load nahi huay. Backend aur MySQL start karein."));
+  }, []);
+
   const saveProject = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const raw = Object.fromEntries(new FormData(event.currentTarget).entries());
@@ -91,12 +97,12 @@ export default function Admin() {
     delete (data as any).title;
     try {
       const editing = projectModal?.mode === "edit";
-      const response = await fetch(editing ? `/api/projects/${projectModal?.item.id}` : "/api/projects", {
-        method: editing ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data),
+      const response = await fetch(editing && projectModal?.item?.id ? `/api/projects/${projectModal.item.id}` : "/api/projects", {
+        method: editing && projectModal?.item?.id ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data),
       });
       if (!response.ok) throw new Error("API unavailable");
       const saved = await response.json();
-      setProjectRows((rows) => editing ? rows.map((row) => row.id === saved.id ? saved : row) : [saved, ...rows]);
+      setProjectRows((rows) => editing && projectModal?.item?.id ? rows.map((row) => row.id === saved.id ? saved : row) : [saved, ...rows]);
       setProjectModal(null); setProjectMessage("");
     } catch { setProjectMessage("Backend/database connect nahi hai. MySQL aur API start karein."); }
   };
@@ -453,7 +459,7 @@ export default function Admin() {
         </main>
       </div>
       {projectModal && <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4" role="dialog" aria-modal="true">
-        <form onSubmit={saveProject} className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+        <form onSubmit={saveProject} className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
           <div className="flex items-center justify-between"><h2 className="font-display text-xl font-extrabold">{projectModal.mode === "add" ? "Add Project" : "Edit Project"}</h2><button type="button" onClick={() => setProjectModal(null)} className="text-2xl text-muted">×</button></div>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             {[["name","Project name"],["slug","Slug"],["category","Category"],["client","Client"],["year","Year"],["duration","Duration"],["image","Image URL"],["technologies","Technologies (comma separated)"],["results","Results (comma separated)"],["description","Short description"]].map(([name,label]) => <label key={name} className="text-sm font-semibold">{label}<input name={name} required={!["image","technologies","results","duration"].includes(name)} defaultValue={projectModal.item?.[name] || (name === "technologies" ? (Array.isArray(projectModal.item?.technologies) ? projectModal.item.technologies.join(", ") : "") : (name === "results" ? (Array.isArray(projectModal.item?.results) ? projectModal.item.results.join(", ") : "") : ""))} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>)}
