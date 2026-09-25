@@ -9,6 +9,7 @@ import {
 import { projects, team, blogPosts, jobs, testimonials } from "../data/content";
 import { Counter } from "../components/layout";
 import { cn } from "../utils/cn";
+import AdminManagement from "../components/AdminManagement";
 
 type Tab = "dashboard" | "projects" | "services" | "team" | "testimonials" | "blog" | "careers" | "messages" | "quotes" | "settings";
 
@@ -460,7 +461,9 @@ export default function Admin() {
               )}
 
               {tab === "settings" && (
-                <div className="grid gap-5 lg:grid-cols-2">
+                <div className="space-y-5">
+                  <AdminManagement />
+                  <div className="grid gap-5 lg:grid-cols-2">
                   {[
                     { t: "General Settings", d: "Site name, tagline, logo & contact details.", rows: [["Site name", "CodeCraft Solutions"], ["Support email", "support@codecraftsolutions.com"], ["Phone", "+1 (555) 012-3456"]] },
                     { t: "SEO & Analytics", d: "Meta defaults, sitemap & tracking.", rows: [["Meta title", "CodeCraft Solutions — Software House"], ["Analytics", "Connected ✓"], ["Sitemap", "Auto-generated"]] },
@@ -480,6 +483,7 @@ export default function Admin() {
                       <button className="mt-4 w-full rounded-xl border border-line py-2.5 text-[13px] font-bold transition hover:border-brand hover:text-brand">Edit {c.t}</button>
                     </div>
                   ))}
+                  </div>
                 </div>
               )}
             </motion.div>
