@@ -91,8 +91,10 @@ export default function Admin() {
   const [imagePreview, setImagePreview] = useState("");
   const [revenueData, setRevenueData] = useState<{ label: string; amount: number }[]>([]);
   const [revenuePeriod, setRevenuePeriod] = useState("30");
+  const [recordCounts, setRecordCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
+    Promise.all(["projects", "services", "team", "testimonials", "blogs", "jobs", "messages", "quotes", "applications"].map(async (resource) => { const response = await fetch(`/api/${resource}`); return [resource, response.ok ? (await response.json()).length : 0] as const; })).then((entries) => setRecordCounts(Object.fromEntries(entries))).catch(() => {});
     fetch("/api/dashboard/revenue").then((r) => r.ok ? r.json() : Promise.reject()).then((rows) => setRevenueData(rows.map((r: any) => ({ label: r.label, amount: Number(r.amount) })))).catch(() => setRevenueData(revenue.map((v, i) => ({ label: ["J","F","M","A","M","J","J","A","S","O","N","D"][i], amount: v * 1000 }))));
     fetch("/api/projects").then((response) => response.ok ? response.json() : Promise.reject()).then((rows) => {
       if (Array.isArray(rows) && rows.length > 0) setProjectRows(rows);
@@ -133,11 +135,11 @@ export default function Admin() {
   };
 
   const stats = useMemo(() => [
-    { label: "Total Projects", value: 52, icon: FolderKanban, delta: "+4 this month", color: "bg-brand" },
-    { label: "Total Messages", value: 148, icon: MessageSquare, delta: "+12 unread", color: "bg-violet-500" },
-    { label: "Applications", value: 86, icon: FileText, delta: "+9 this week", color: "bg-amber-500" },
+    { label: "Total Projects", value: recordCounts.projects || projectRows.length, icon: FolderKanban, delta: "+4 this month", color: "bg-brand" },
+    { label: "Total Messages", value: recordCounts.messages || 0, icon: MessageSquare, delta: "+12 unread", color: "bg-violet-500" },
+    { label: "Applications", value: recordCounts.applications || 0, icon: FileText, delta: "+9 this week", color: "bg-amber-500" },
     { label: "Blog Posts", value: blogPosts.length, icon: PenLine, delta: "2 drafts", color: "bg-emerald-500" },
-    { label: "Quote Requests", value: 34, icon: QuoteIcon, delta: "7 pending", color: "bg-rose-500" },
+    { label: "Quote Requests", value: recordCounts.quotes || 0, icon: QuoteIcon, delta: "7 pending", color: "bg-rose-500" },
   ], []);
 
   if (!authed) {
@@ -214,8 +216,8 @@ export default function Admin() {
               >
                 <t.icon className="h-[18px] w-[18px]" />
                 <span className="flex-1 text-left">{t.label}</span>
-                {t.badge != null && (
-                  <span className={cn("rounded-full px-2 py-0.5 text-[10.5px] font-bold", tab === t.id ? "bg-white/15 text-white" : "bg-paper-2 text-charcoal")}>{t.badge}</span>
+                {(t.badge != null || ["projects","services","team","testimonials","blog","careers","messages","quotes"].includes(t.id)) && (
+                  <span className={cn("rounded-full px-2 py-0.5 text-[10.5px] font-bold", tab === t.id ? "bg-white/15 text-white" : "bg-paper-2 text-charcoal")}>{recordCounts[t.id === "blog" ? "blogs" : t.id === "careers" ? "jobs" : t.id] ?? (t.id === "projects" ? projectRows.length : 0)}</span>
                 )}
               </button>
             ))}
