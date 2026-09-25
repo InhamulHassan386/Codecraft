@@ -32,6 +32,9 @@ app.post("/api/auth/register", async (req, res) => {
     res.status(201).json({ id: result.insertId, name, email, role });
   } catch (error) { res.status(400).json({ error: error.code === "ER_DUP_ENTRY" ? "Email already exists" : "Could not create admin" }); }
 });
+app.get("/api/admins/:id/permissions", async (req, res) => { try { const [rows] = await pool.query("SELECT permission_key FROM admin_permissions WHERE admin_id = ?", [req.params.id]); res.json(rows.map((r) => r.permission_key)); } catch { res.status(503).json({ error: "Could not load permissions" }); } });
+app.put("/api/admins/:id/permissions", async (req, res) => { try { await pool.execute("DELETE FROM admin_permissions WHERE admin_id = ?", [req.params.id]); for (const permission of (req.body.permissions || [])) await pool.execute("INSERT INTO admin_permissions (admin_id,permission_key) VALUES (?,?)", [req.params.id, permission]); res.json({ ok: true }); } catch { res.status(400).json({ error: "Could not save permissions" }); } });
+app.get("/api/activity-logs", async (_req, res) => { try { const [rows] = await pool.query("SELECT l.*, a.name AS admin_name FROM admin_activity_logs l LEFT JOIN admin_users a ON a.id=l.admin_id ORDER BY l.created_at DESC LIMIT 200"); res.json(rows); } catch { res.status(503).json({ error: "Could not load activity" }); } });
 app.get("/api/admins", async (_req, res) => {
   try { const [rows] = await pool.query("SELECT id,name,email,role,is_active AS isActive,last_login AS lastLogin,created_at AS createdAt FROM admin_users ORDER BY id DESC"); res.json(rows); }
   catch { res.status(503).json({ error: "Could not load admins" }); }
