@@ -472,11 +472,14 @@ export default function Admin() {
             {[["name","Project name"],["slug","Slug"],["category","Category"],["client","Client"],["year","Year"],["duration","Duration"],["technologies","Technologies (comma separated)"],["results","Results (comma separated)"],["description","Short description"]].map(([name,label]) => <label key={name} className="text-sm font-semibold">{label}<input name={name} required={!["image","technologies","results","duration"].includes(name)} defaultValue={projectModal.item?.[name] || (name === "technologies" ? (Array.isArray(projectModal.item?.technologies) ? projectModal.item.technologies.join(", ") : "") : (name === "results" ? (Array.isArray(projectModal.item?.results) ? projectModal.item.results.join(", ") : "") : ""))} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>)}
             <label className="text-sm font-semibold sm:col-span-2">Detailed description<textarea name="long_description" rows={3} defaultValue={projectModal.item?.long_description || projectModal.item?.description || ""} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>
           </div>
-          <div className="mt-3 rounded-xl border border-line p-3">
-            <label className="block text-sm font-semibold">Image URL / Choose File <span className="font-normal text-muted">(optional)</span></label>
-            <input name="image" defaultValue={projectModal.item?.image || ""} placeholder="Paste image URL (optional)" className="mt-2 w-full rounded-xl border border-line px-3 py-2.5 text-sm font-normal" />
-            <div className="mt-2 flex items-center gap-3"><span className="text-xs text-muted">or</span><input name="imageFile" type="file" accept="image/*" className="w-full rounded-xl border border-line px-3 py-2.5 text-sm font-normal" /></div>
-            <span className="mt-1 block text-xs font-normal text-muted">URL ya Choose File mein se koi ek use karein.</span>
+          <div className="mt-3 rounded-xl border border-line p-4">
+            <p className="text-sm font-semibold">Project Image</p>
+            <label className="mt-3 flex items-center gap-2 text-sm font-medium"><input type="radio" name="imageSource" value="url" defaultChecked /> Image URL</label>
+            <input name="image" defaultValue={projectModal.item?.image || ""} placeholder="https://example.com/image.jpg" className="mt-2 w-full rounded-xl border border-line px-3 py-2.5 text-sm font-normal" />
+            <div className="my-3 text-center text-xs font-semibold text-muted">OR</div>
+            <label className="flex items-center gap-2 text-sm font-medium"><input type="radio" name="imageSource" value="file" /> Upload Image</label>
+            <input name="imageFile" type="file" accept="image/*" className="mt-2 w-full rounded-xl border border-line px-3 py-2.5 text-sm font-normal" />
+            <button type="submit" className="mt-3 rounded-xl border border-line px-4 py-2 text-sm font-semibold hover:border-brand hover:text-brand">Upload / Save Image</button>
           </div>
           <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setProjectModal(null)} className="rounded-xl border border-line px-4 py-2.5 font-semibold">Cancel</button><button className="btn-primary rounded-xl px-5 py-2.5 font-semibold">Save Project</button></div>
         </form>
