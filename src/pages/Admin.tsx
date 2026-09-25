@@ -86,7 +86,9 @@ export default function Admin() {
 
   const saveProject = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const data = Object.fromEntries(new FormData(event.currentTarget).entries());
+    const raw = Object.fromEntries(new FormData(event.currentTarget).entries());
+    const data = { ...raw, name: raw.name || raw.title, description: raw.description || "", long_description: raw.long_description || raw.description || "", technologies: JSON.stringify(String(raw.technologies || "").split(",").map((v) => v.trim()).filter(Boolean)), results: JSON.stringify(String(raw.results || "").split(",").map((v) => v.trim()).filter(Boolean)), duration: raw.duration || "Not specified", published: 1 };
+    delete (data as any).title;
     try {
       const editing = projectModal?.mode === "edit";
       const response = await fetch(editing ? `/api/projects/${projectModal?.item.id}` : "/api/projects", {
@@ -453,7 +455,10 @@ export default function Admin() {
       {projectModal && <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4" role="dialog" aria-modal="true">
         <form onSubmit={saveProject} className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
           <div className="flex items-center justify-between"><h2 className="font-display text-xl font-extrabold">{projectModal.mode === "add" ? "Add Project" : "Edit Project"}</h2><button type="button" onClick={() => setProjectModal(null)} className="text-2xl text-muted">×</button></div>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">{[["title","Project title"],["slug","Slug"],["category","Category"],["client","Client"],["year","Year"],["image","Image URL"]].map(([name,label]) => <label key={name} className="text-sm font-semibold">{label}<input name={name} required={name === "title"} defaultValue={projectModal.item?.[name] || projectModal.item?.name || ""} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>)}</div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            {[["name","Project name"],["slug","Slug"],["category","Category"],["client","Client"],["year","Year"],["duration","Duration"],["image","Image URL"],["technologies","Technologies (comma separated)"],["results","Results (comma separated)"],["description","Short description"]].map(([name,label]) => <label key={name} className="text-sm font-semibold">{label}<input name={name} required={!["image","technologies","results","duration"].includes(name)} defaultValue={projectModal.item?.[name] || (name === "technologies" ? (Array.isArray(projectModal.item?.technologies) ? projectModal.item.technologies.join(", ") : "") : (name === "results" ? (Array.isArray(projectModal.item?.results) ? projectModal.item.results.join(", ") : "") : ""))} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>)}
+            <label className="text-sm font-semibold sm:col-span-2">Detailed description<textarea name="long_description" rows={3} defaultValue={projectModal.item?.long_description || projectModal.item?.description || ""} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>
+          </div>
           <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setProjectModal(null)} className="rounded-xl border border-line px-4 py-2.5 font-semibold">Cancel</button><button className="btn-primary rounded-xl px-5 py-2.5 font-semibold">Save Project</button></div>
         </form>
       </div>}
