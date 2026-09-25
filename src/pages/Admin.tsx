@@ -91,6 +91,7 @@ export default function Admin() {
   const [sidebar, setSidebar] = useState(false);
   const [authed, setAuthed] = useState(false);
   const [adminMenu, setAdminMenu] = useState(false);
+  const [loginError, setLoginError] = useState("");
   const [projectRows, setProjectRows] = useState<any[]>(projects);
   const [projectModal, setProjectModal] = useState<{ mode: "add" | "edit"; item?: any } | null>(null);
   const [projectMessage, setProjectMessage] = useState("");
@@ -160,10 +161,11 @@ export default function Admin() {
           <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-ink"><LayoutDashboard className="h-6 w-6 text-white" /></span>
           <h1 className="font-display mt-5 text-center text-2xl font-extrabold text-charcoal">Admin Panel</h1>
           <p className="mt-1.5 text-center text-sm text-muted">Sign in to manage content, projects & inquiries. <span className="font-semibold">(Demo — any credentials work)</span></p>
-          <form className="mt-7 space-y-4" onSubmit={async (e) => { e.preventDefault(); const data = new FormData(e.currentTarget); const response = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: data.get("email"), password: data.get("password") }) }); if (!response.ok) return; const session = await response.json(); localStorage.setItem("codecraft_token", session.token); setAuthed(true); }}>
+          <form className="mt-7 space-y-4" onSubmit={async (e) => { e.preventDefault(); const data = new FormData(e.currentTarget); const response = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: data.get("email"), password: data.get("password") }) }); if (!response.ok) { setLoginError("Invalid login or database/API is not running."); return; } const session = await response.json(); localStorage.setItem("codecraft_token", session.token); setAuthed(true); }}>
             <div><label className="mb-1.5 block text-[13px] font-semibold">Email</label><input name="email" type="email" required defaultValue="admin@codecraftsolutions.com" className="w-full rounded-xl border border-line px-4 py-3 text-sm" /></div>
             <div><label className="mb-1.5 block text-[13px] font-semibold">Password</label><input name="password" type="password" required defaultValue="password" className="w-full rounded-xl border border-line px-4 py-3 text-sm" /></div>
             <button type="submit" className="btn-primary w-full rounded-xl px-6 py-3.5 text-sm font-semibold">Sign In to Dashboard</button>
+          {loginError && <p className="mt-3 text-center text-sm font-semibold text-red-600">{loginError}</p>}
           </form>
           <p className="mt-5 flex items-center justify-center gap-1.5 text-[12px] text-muted"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Secured with 2FA & audit logs in production</p>
         </motion.div>

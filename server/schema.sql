@@ -82,3 +82,5 @@ CREATE TABLE IF NOT EXISTS admin_activity_logs (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, admin_id INT UNSIGNED NULL, action VARCHAR(160) NOT NULL,
   details TEXT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (admin_id) REFERENCES admin_users(id) ON DELETE SET NULL
 );
+
+INSERT IGNORE INTO admin_users (name,email,password_hash,role,is_active) VALUES ('Site Owner','admin@codecraftsolutions.com','$2b$10$GGymbgicgSpfQqJpjNyOuOIHV3MTsEnz.2jrRN3jKnDbShVKBIFZO','Super Admin',TRUE);
