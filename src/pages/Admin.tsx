@@ -97,7 +97,6 @@ export default function Admin() {
   const [projectModal, setProjectModal] = useState<{ mode: "add" | "edit"; item?: any } | null>(null);
   const [projectMessage, setProjectMessage] = useState("");
   const [projectSearch, setProjectSearch] = useState("");
-  const [imageUploaded, setImageUploaded] = useState(false);
   const [uploadedImageData, setUploadedImageData] = useState("");
   const [imageSource, setImageSource] = useState<"upload" | "url">("upload");
   const [imageError, setImageError] = useState("");
