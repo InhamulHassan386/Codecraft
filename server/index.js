@@ -23,6 +23,7 @@ const pool = mysql.createPool({
 const JWT_SECRET = process.env.JWT_SECRET || "change-this-in-production";
 function requireAuth(req, res, next) { const header = req.headers.authorization || ""; try { if (!header.startsWith("Bearer ")) throw new Error(); req.auth = jwt.verify(header.slice(7), JWT_SECRET); next(); } catch { res.status(401).json({ error: "Authentication required" }); } }
 function requireSuperAdmin(req, res, next) { if (req.auth?.role !== "Super Admin") return res.status(403).json({ error: "Super Admin access required" }); next(); }
+function requirePermission(permission) { return (req, res, next) => { if (req.auth?.role === "Super Admin") return next(); pool.query("SELECT 1 FROM admin_permissions WHERE admin_id=? AND permission_key=?", [req.auth?.id, permission]).then(([rows]) => rows.length ? next() : res.status(403).json({ error: "Permission required" })).catch(() => res.status(503).json({ error: "Permission check unavailable" })); }; }
 async function logActivity(adminId, action, details = "") { try { await pool.execute("INSERT INTO admin_activity_logs (admin_id, action, details) VALUES (?, ?, ?)", [adminId || null, action, details]); } catch { /* logging must not break the primary action */ } }
 
 app.post("/api/auth/register", async (req, res) => {
