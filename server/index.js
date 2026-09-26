@@ -21,6 +21,10 @@ const pool = mysql.createPool({
 });
 
 const JWT_SECRET = process.env.JWT_SECRET || "change-this-in-production";
+function requireAuth(req, res, next) { const header = req.headers.authorization || ""; try { if (!header.startsWith("Bearer ")) throw new Error(); req.auth = jwt.verify(header.slice(7), JWT_SECRET); next(); } catch { res.status(401).json({ error: "Authentication required" }); } }
+function requireSuperAdmin(req, res, next) { if (req.auth?.role !== "Super Admin") return res.status(403).json({ error: "Super Admin access required" }); next(); }
+async function logActivity(adminId, action, details = "") { try { await pool.execute("INSERT INTO admin_activity_logs (admin_id, action, details) VALUES (?, ?, ?)", [adminId || null, action, details]); } catch { /* logging must not break the primary action */ } }
+
 app.post("/api/auth/register", async (req, res) => {
   const { name, email, password, role = "Editor" } = req.body;
   if (!name || !email || !password || password.length < 8) return res.status(400).json({ error: "Name, email and an 8+ character password are required" });
