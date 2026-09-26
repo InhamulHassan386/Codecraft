@@ -8,7 +8,7 @@ import jwt from "jsonwebtoken";
 dotenv.config();
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "10mb" }));
 const port = Number(process.env.PORT || 8787);
 const pool = mysql.createPool({
   host: process.env.DB_HOST || "127.0.0.1",
@@ -48,6 +48,7 @@ app.post("/api/auth/login", async (req, res) => {
 });
 
 const fields = "id, slug, title, excerpt, category, date, read_time AS readTime, image, author, author_role AS authorRole, featured";
+app.get("/api/dashboard/revenue", async (_req, res) => { try { const [rows] = await pool.query("SELECT label, amount, recorded_at AS recordedAt FROM revenue_records ORDER BY recorded_at"); res.json(rows); } catch { res.status(503).json({ error: "Revenue data unavailable" }); } });
 app.get("/api/health", async (_req, res) => {
   try { await pool.query("SELECT 1"); res.json({ ok: true, database: "mysql" }); }
   catch { res.status(503).json({ ok: false, database: "unavailable" }); }
@@ -122,6 +123,11 @@ app.put("/api/settings/:key", async (req, res) => {
   try { await pool.execute("INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)", [req.params.key, req.body.value]); res.json({ key: req.params.key, value: req.body.value }); }
   catch { res.status(400).json({ error: "Could not save setting" }); }
 });
+async function ensureProjectImageStorage() {
+  try { await pool.query("ALTER TABLE projects MODIFY image MEDIUMTEXT NOT NULL"); }
+  catch (error) { console.warn("project image storage check:", error.message); }
+}
+
 async function ensureAdminColumns() {
   try {
     await pool.query("ALTER TABLE admin_users ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE");
@@ -134,7 +140,7 @@ async function ensureAdminColumns() {
     if (!String(error.code).includes("DUPLICATE") && error.code !== "ER_DUP_FIELDNAME") console.warn("last_login check:", error.message);
   }
 }
-ensureAdminColumns().then(() => app.listen(port, "0.0.0.0", () => console.log(`CodeCraft API listening on ${port}`))).catch((error) => {
+ensureProjectImageStorage().then(() => ensureAdminColumns()).then(() => app.listen(port, "0.0.0.0", () => console.log(`CodeCraft API listening on ${port}`))).catch((error) => {
   console.error("Database setup failed:", error.message);
   app.listen(port, "0.0.0.0", () => console.log(`CodeCraft API listening on ${port} (database setup pending)`));
 });

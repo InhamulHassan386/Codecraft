@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS blog_posts (
 );
 CREATE TABLE IF NOT EXISTS projects (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, slug VARCHAR(180) NOT NULL UNIQUE, name VARCHAR(255) NOT NULL,
-  category VARCHAR(80) NOT NULL, description TEXT NOT NULL, long_description LONGTEXT NOT NULL, image TEXT NOT NULL,
+  category VARCHAR(80) NOT NULL, description TEXT NOT NULL, long_description LONGTEXT NOT NULL, image MEDIUMTEXT NOT NULL,
   technologies JSON NOT NULL, results JSON NOT NULL, year VARCHAR(10) NOT NULL, client VARCHAR(180) NOT NULL,
   duration VARCHAR(80) NOT NULL, published BOOLEAN NOT NULL DEFAULT TRUE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -67,3 +67,8 @@ INSERT IGNORE INTO projects (slug, name, category, description, long_description
 ('shopnest-ecommerce', 'ShopNest E-Commerce', 'E-Commerce', 'A conversion-focused online store with a smooth checkout experience.', 'ShopNest helps a growing retail brand manage products, orders and customer journeys from one platform.', 'https://images.pexels.com/photos/230544/pexels-photo-230544.jpeg?auto=compress&cs=tinysrgb&w=1200', '["React", "Express", "MySQL"]', '["2.4x more conversions", "35% lower bounce rate"]', '2026', 'ShopNest', '12 weeks', TRUE),
 ('careconnect-health', 'CareConnect Health Portal', 'Healthcare', 'A patient portal that makes appointments and care updates simple.', 'CareConnect gives patients and medical teams a clear, secure way to manage appointments, records and follow-ups.', 'https://images.pexels.com/photos/4386466/pexels-photo-4386466.jpeg?auto=compress&cs=tinysrgb&w=1200', '["TypeScript", "Node.js", "MySQL"]', '["60% fewer support calls", "4.8/5 patient rating"]', '2025', 'CareConnect', '16 weeks', TRUE),
 ('fleetwise-logistics', 'FleetWise Logistics', 'Logistics', 'Real-time fleet operations software for growing delivery teams.', 'FleetWise connects dispatchers, drivers and managers with live delivery tracking and performance insights.', 'https://images.pexels.com/photos/6169056/pexels-photo-6169056.jpeg?auto=compress&cs=tinysrgb&w=1200', '["React", "Express", "MySQL"]', '["28% faster dispatch", "18% fuel savings"]', '2025', 'FleetWise', '18 weeks', TRUE);
+
+CREATE TABLE IF NOT EXISTS revenue_records (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, label VARCHAR(30) NOT NULL, amount DECIMAL(12,2) NOT NULL, recorded_at DATE NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+INSERT INTO revenue_records (label, amount, recorded_at) VALUES ("Jan",42000,"2026-01-31"),("Feb",58000,"2026-02-28"),("Mar",45000,"2026-03-31"),("Apr",70000,"2026-04-30"),("May",62000,"2026-05-31"),("Jun",84000,"2026-06-30"),("Jul",76000,"2026-07-31"),("Aug",92000,"2026-08-31"),("Sep",88000,"2026-09-30"),("Oct",104000,"2026-10-31"),("Nov",98000,"2026-11-30"),("Dec",120000,"2026-12-31");
+
+ALTER TABLE projects MODIFY image MEDIUMTEXT NOT NULL;

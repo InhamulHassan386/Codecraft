@@ -50,6 +50,16 @@ const mockApps = [
 
 const revenue = [42, 58, 45, 70, 62, 84, 76, 92, 88, 104, 98, 120];
 
+async function compressProjectImage(file: File): Promise<string> {
+  const source = await new Promise<HTMLImageElement>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => { const image = new Image(); image.onload = () => resolve(image); image.onerror = reject; image.src = String(reader.result); }; reader.onerror = reject; reader.readAsDataURL(file); });
+  const max = 1400;
+  const scale = Math.min(1, max / Math.max(source.width, source.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(source.width * scale)); canvas.height = Math.max(1, Math.round(source.height * scale));
+  canvas.getContext("2d")!.drawImage(source, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/webp", 0.78);
+}
+
 function StatusPill({ s }: { s: string }) {
   const map: Record<string, string> = {
     New: "bg-brand-light text-brand",
@@ -86,8 +96,16 @@ export default function Admin() {
   const [projectSearch, setProjectSearch] = useState("");
   const [imageUploaded, setImageUploaded] = useState(false);
   const [uploadedImageData, setUploadedImageData] = useState("");
+  const [imageSource, setImageSource] = useState<"upload" | "url">("upload");
+  const [imageError, setImageError] = useState("");
+  const [imagePreview, setImagePreview] = useState("");
+  const [revenueData, setRevenueData] = useState<{ label: string; amount: number }[]>([]);
+  const [revenuePeriod, setRevenuePeriod] = useState("30");
+  const [recordCounts, setRecordCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
+    Promise.all(["projects", "services", "team", "testimonials", "blogs", "jobs", "messages", "quotes", "applications"].map(async (resource) => { const response = await fetch(`/api/${resource}`); return [resource, response.ok ? (await response.json()).length : 0] as const; })).then((entries) => setRecordCounts(Object.fromEntries(entries))).catch(() => {});
+    fetch("/api/dashboard/revenue").then((r) => r.ok ? r.json() : Promise.reject()).then((rows) => setRevenueData(rows.map((r: any) => ({ label: r.label, amount: Number(r.amount) })))).catch(() => setRevenueData(revenue.map((v, i) => ({ label: ["J","F","M","A","M","J","J","A","S","O","N","D"][i], amount: v * 1000 }))));
     fetch("/api/projects").then((response) => response.ok ? response.json() : Promise.reject()).then((rows) => {
       if (Array.isArray(rows) && rows.length > 0) setProjectRows(rows);
     }).catch(() => setProjectMessage("Projects load nahi huay. Backend aur MySQL start karein."));
@@ -102,6 +120,7 @@ export default function Admin() {
     else if (imageFile?.size) image = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(imageFile);
     });
+    if (!image) { setImageError("Please select an image or provide a valid image URL."); return; }
     const data = { ...raw, image, name: raw.name || raw.title, description: raw.description || "", long_description: raw.long_description || raw.description || "", technologies: JSON.stringify(String(raw.technologies || "").split(",").map((v) => v.trim()).filter(Boolean)), results: JSON.stringify(String(raw.results || "").split(",").map((v) => v.trim()).filter(Boolean)), duration: raw.duration || "Not specified", published: 1 };
     delete (data as any).imageFile;
     delete (data as any).title;
@@ -126,11 +145,11 @@ export default function Admin() {
   };
 
   const stats = useMemo(() => [
-    { label: "Total Projects", value: 52, icon: FolderKanban, delta: "+4 this month", color: "bg-brand" },
-    { label: "Total Messages", value: 148, icon: MessageSquare, delta: "+12 unread", color: "bg-violet-500" },
-    { label: "Applications", value: 86, icon: FileText, delta: "+9 this week", color: "bg-amber-500" },
+    { label: "Total Projects", value: recordCounts.projects || projectRows.length, icon: FolderKanban, delta: "+4 this month", color: "bg-brand" },
+    { label: "Total Messages", value: recordCounts.messages || 0, icon: MessageSquare, delta: "+12 unread", color: "bg-violet-500" },
+    { label: "Applications", value: recordCounts.applications || 0, icon: FileText, delta: "+9 this week", color: "bg-amber-500" },
     { label: "Blog Posts", value: blogPosts.length, icon: PenLine, delta: "2 drafts", color: "bg-emerald-500" },
-    { label: "Quote Requests", value: 34, icon: QuoteIcon, delta: "7 pending", color: "bg-rose-500" },
+    { label: "Quote Requests", value: recordCounts.quotes || 0, icon: QuoteIcon, delta: "7 pending", color: "bg-rose-500" },
   ], []);
 
   if (!authed) {
@@ -207,8 +226,8 @@ export default function Admin() {
               >
                 <t.icon className="h-[18px] w-[18px]" />
                 <span className="flex-1 text-left">{t.label}</span>
-                {t.badge != null && (
-                  <span className={cn("rounded-full px-2 py-0.5 text-[10.5px] font-bold", tab === t.id ? "bg-white/15 text-white" : "bg-paper-2 text-charcoal")}>{t.badge}</span>
+                {(t.badge != null || ["projects","services","team","testimonials","blog","careers","messages","quotes"].includes(t.id)) && (
+                  <span className={cn("rounded-full px-2 py-0.5 text-[10.5px] font-bold", tab === t.id ? "bg-white/15 text-white" : "bg-brand-light text-brand")}>{recordCounts[t.id === "blog" ? "blogs" : t.id === "careers" ? "jobs" : t.id] ?? (t.id === "projects" ? projectRows.length : 0)}</span>
                 )}
               </button>
             ))}
@@ -233,7 +252,7 @@ export default function Admin() {
                       <p className="text-sm text-muted">Here's what's happening across your website today.</p>
                     </div>
                     <div className="flex gap-2">
-                      <button className="flex items-center gap-1.5 rounded-xl border border-line bg-white px-4 py-2.5 text-[13px] font-semibold"><Filter className="h-4 w-4" /> Last 30 days</button>
+                      <label className="flex items-center gap-1.5 rounded-xl border border-line bg-white px-3 py-2.5 text-[13px] font-semibold"><Filter className="h-4 w-4" /><select value={revenuePeriod} onChange={(e) => setRevenuePeriod(e.target.value)} className="bg-transparent outline-none"><option value="30">Last 30 days</option><option value="90">Last 90 days</option><option value="365">This year</option></select></label>
                       <button onClick={() => { setTab("projects"); setProjectModal({ mode: "add" }); }} className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> New Project</button>
                     </div>
                   </div>
@@ -256,14 +275,14 @@ export default function Admin() {
                         <span className="flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-[12px] font-bold text-emerald-600"><ArrowUpRight className="h-3.5 w-3.5" /> +24.6%</span>
                       </div>
                       <div className="mt-5 flex h-44 items-end gap-2">
-                        {revenue.map((v, i) => (
+                        {revenueData.map((item, i) => (
                           <div key={i} className="group relative flex-1">
                             <motion.div
-                              initial={{ height: 0 }} animate={{ height: `${(v / 120) * 100}%` }} transition={{ duration: 0.7, delay: i * 0.05 }}
+                              initial={{ height: 0 }} animate={{ height: `${(item.amount / Math.max(...revenueData.map((r) => r.amount), 1)) * 100}%` }} transition={{ duration: 0.7, delay: i * 0.05 }}
                               className={cn("w-full rounded-t-lg", i === revenue.length - 1 ? "bg-brand" : "bg-brand/15 group-hover:bg-brand/40")}
                               style={{ minHeight: 8 }}
                             />
-                            {i % 2 === 0 && <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] font-semibold text-muted">{["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"][i]}</span>}
+                            {i % 2 === 0 && <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] font-semibold text-muted">{item.label}</span>}
                           </div>
                         ))}
                       </div>
@@ -476,16 +495,22 @@ export default function Admin() {
             <label className="text-sm font-semibold sm:col-span-2">Detailed description<textarea name="long_description" rows={3} defaultValue={projectModal.item?.long_description || projectModal.item?.description || ""} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>
           </div>
           <div className="mt-3 rounded-xl border border-line p-4">
-            <p className="text-sm font-semibold">Project Image</p>
-            <label className="mt-3 flex items-center gap-2 text-sm font-medium"><input type="radio" name="imageSource" value="url" defaultChecked /> Image URL</label>
-            <input name="image" defaultValue={projectModal.item?.image || ""} placeholder="https://example.com/image.jpg" className="mt-2 w-full rounded-xl border border-line px-3 py-2.5 text-sm font-normal" />
-            <div className="my-3 text-center text-xs font-semibold text-muted">OR</div>
-            <label className="flex items-center gap-2 text-sm font-medium"><input type="radio" name="imageSource" value="file" /> Upload Image</label>
-            <input id="project-image-file" name="imageFile" type="file" accept="image/*" className="mt-2 w-full rounded-xl border border-line px-3 py-2.5 text-sm font-normal" />
-            <div className="mt-3 flex gap-2"><button type="button" onClick={() => { const file = (document.getElementById("project-image-file") as HTMLInputElement)?.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { setUploadedImageData(String(reader.result)); setImageUploaded(true); }; reader.readAsDataURL(file); }} className="rounded-xl border border-line px-4 py-2 text-sm font-semibold hover:border-brand hover:text-brand">Upload</button><button type="submit" className="btn-primary rounded-xl px-4 py-2 text-sm font-semibold">Save Image</button></div>
-            {imageUploaded && <p className="mt-2 text-xs font-semibold text-emerald-600">Image ready — Save Image par click karein.</p>}
+            <p className="text-sm font-semibold">Image Source</p>
+            <div className="mt-3 grid grid-cols-2 rounded-xl bg-paper p-1">
+              <button type="button" onClick={() => { setImageSource("upload"); setImageError(""); }} className={cn("rounded-lg px-3 py-2 text-sm font-semibold", imageSource === "upload" ? "bg-white shadow-card" : "text-muted")}>Upload Image</button>
+              <button type="button" onClick={() => { setImageSource("url"); setImageError(""); }} className={cn("rounded-lg px-3 py-2 text-sm font-semibold", imageSource === "url" ? "bg-white shadow-card" : "text-muted")}>Image URL</button>
+            </div>
+            {imageSource === "upload" ? <>
+              <input id="project-image-file" name="imageFile" type="file" accept="image/*" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (!file) return; if (!file.type.startsWith("image/")) return setImageError("Please select a valid image file."); if (file.size > 5 * 1024 * 1024) return setImageError("Maximum file size is 5 MB."); setImageError(""); compressProjectImage(file).then((compressed) => { setUploadedImageData(compressed); setImagePreview(compressed); }).catch(() => setImageError("Image could not be processed.")); }} />
+              <div onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); const file = e.dataTransfer.files?.[0]; if (file) { const input = document.getElementById("project-image-file") as HTMLInputElement; const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files; input.dispatchEvent(new Event("change", { bubbles: true })); } }} className="mt-3 rounded-xl border-2 border-dashed border-line p-5 text-center">
+                <p className="text-2xl">⇧</p><p className="mt-1 text-sm font-semibold">Drag &amp; drop image</p><p className="text-xs text-muted">or</p><button type="button" onClick={() => document.getElementById("project-image-file")?.click()} className="mt-2 rounded-lg border border-line px-4 py-2 text-sm font-semibold">Browse Files</button><p className="mt-2 text-xs text-muted">All image formats · Maximum 5 MB</p>
+              </div>
+            </> : <label className="mt-3 block text-sm font-semibold">Image URL<input name="image" defaultValue={projectModal.item?.image || ""} placeholder="https://example.com/image.jpg" onChange={(e) => { const value = e.target.value; setImagePreview(value); try { new URL(value); setImageError(""); } catch { setImageError(value ? "Please enter a valid URL." : ""); } }} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 text-sm font-normal" /></label>}
+            {imagePreview && <img src={imagePreview} onError={() => setImageError("Image could not be loaded.")} onLoad={() => setImageError("")} className="mt-3 max-h-32 w-full rounded-lg object-contain" alt="Preview" />}
+            {imageError && <p className="mt-2 text-xs font-semibold text-red-600">{imageError}</p>}
+            {imagePreview && <button type="button" onClick={() => { setImagePreview(""); setUploadedImageData(""); setImageError(""); }} className="mt-2 text-xs font-semibold text-red-600">Remove image</button>}
           </div>
-          <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setProjectModal(null)} className="rounded-xl border border-line px-4 py-2.5 font-semibold">Cancel</button><button className="btn-primary rounded-xl px-5 py-2.5 font-semibold">Save Project</button></div>
+          <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setProjectModal(null)} className="rounded-xl border border-line px-4 py-2.5 font-semibold">Cancel</button><button disabled={!!imageError || (!imagePreview && !projectModal.item?.image)} className="btn-primary rounded-xl px-5 py-2.5 font-semibold disabled:cursor-not-allowed disabled:opacity-50">Save Project</button></div>
         </form>
       </div>}
     </div>
@@ -499,7 +524,7 @@ function TableCard({ title, sub, action, onAction, searchValue, onSearch, childr
         <div><h2 className="font-display text-lg font-extrabold">{title}</h2><p className="text-[13px] text-muted">{sub}</p></div>
         <div className="flex gap-2">
           {onSearch ? <label className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" /><input value={searchValue || ""} onChange={(event) => onSearch(event.target.value)} placeholder="Search..." className="w-36 rounded-xl border border-line py-2.5 pl-9 pr-3 text-[13px]" /></label> : <button className="flex items-center gap-1.5 rounded-xl border border-line px-4 py-2.5 text-[13px] font-semibold"><Search className="h-4 w-4" /> Search</button>}
-          <button className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> {action}</button>
+          <button onClick={onAction} className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> {action}</button>
         </div>
       </div>
       <div className="border-t border-line">{children}</div>
