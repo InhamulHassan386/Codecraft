@@ -33,7 +33,7 @@ app.post("/api/auth/register", async (req, res) => {
     if (count[0].total > 0 && req.headers["x-super-admin"] !== process.env.SUPER_ADMIN_KEY) return res.status(403).json({ error: "Only a Super Admin can add admins" });
     const hash = await bcrypt.hash(password, 12);
     const [result] = await pool.execute("INSERT INTO admin_users (name,email,password_hash,role) VALUES (?,?,?,?)", [name, email, hash, role]);
-    res.status(201).json({ id: result.insertId, name, email, role });
+    await logActivity(result.insertId, "Admin created", `Created ${email}`); res.status(201).json({ id: result.insertId, name, email, role });
   } catch (error) { res.status(400).json({ error: error.code === "ER_DUP_ENTRY" ? "Email already exists" : "Could not create admin" }); }
 });
 app.put("/api/admins/:id", async (req, res) => { const { name, email, role, isActive, profileImage } = req.body; try { await pool.execute("UPDATE admin_users SET name=?, email=?, role=?, is_active=?, profile_image=? WHERE id=?", [name,email,role,isActive === false ? 0 : 1,profileImage || null,req.params.id]); const [rows] = await pool.query("SELECT id,name,email,role,is_active AS isActive,last_login AS lastLogin,profile_image AS profileImage FROM admin_users WHERE id=?", [req.params.id]); res.json(rows[0]); } catch { res.status(400).json({ error: "Could not update admin" }); } });
@@ -54,7 +54,7 @@ app.post("/api/auth/login", async (req, res) => {
     const [rows] = await pool.execute("SELECT id,name,email,password_hash AS passwordHash,role FROM admin_users WHERE email = ? AND is_active = 1", [email]);
     if (!rows[0] || !(await bcrypt.compare(password || "", rows[0].passwordHash))) return res.status(401).json({ error: "Invalid email or password" });
     const admin = rows[0]; await pool.execute("UPDATE admin_users SET last_login = CURRENT_TIMESTAMP WHERE id = ?", [admin.id]);
-    res.json({ token: jwt.sign({ id: admin.id, role: admin.role }, JWT_SECRET, { expiresIn: "8h" }), admin: { id: admin.id, name: admin.name, email: admin.email, role: admin.role } });
+    await logActivity(admin.id, "Admin login", "Successful login"); res.json({ token: jwt.sign({ id: admin.id, role: admin.role }, JWT_SECRET, { expiresIn: "8h" }), admin: { id: admin.id, name: admin.name, email: admin.email, role: admin.role } });
   } catch { res.status(503).json({ error: "Database unavailable" }); }
 });
 
