@@ -23,6 +23,7 @@ const pool = mysql.createPool({
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET && process.env.NODE_ENV === "production") throw new Error("JWT_SECRET is required in production");
+app.get("/api/auth/me", requireAuth, async (req, res) => { try { const [rows] = await pool.query("SELECT id,name,email,role,is_active AS isActive,last_login AS lastLogin,profile_image AS profileImage FROM admin_users WHERE id=? AND is_active=1", [req.auth.id]); if (!rows[0]) return res.status(401).json({ error: "Account inactive" }); res.json(rows[0]); } catch { res.status(503).json({ error: "Could not load session" }); } });
 app.post("/api/auth/register", async (req, res) => {
   const { name, email, password, role = "Editor" } = req.body;
   if (!name || !email || !password || password.length < 8) return res.status(400).json({ error: "Name, email and an 8+ character password are required" });
