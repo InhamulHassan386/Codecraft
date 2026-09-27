@@ -85,6 +85,10 @@ const resources = {
   quotes: { table: "quote_requests", id: "id" },
   applications: { table: "job_applications", id: "id" },
 };
+app.get("/api/projects", async (req, res) => {
+  const { q = "", category = "", published } = req.query;
+  try { const values = []; const where = []; if (q) { where.push("(name LIKE ? OR category LIKE ? OR client LIKE ?)"); values.push(`%${q}%`, `%${q}%`, `%${q}%`); } if (category) { where.push("category = ?"); values.push(category); } if (published !== undefined) { where.push("published = ?"); values.push(published === "true" ? 1 : 0); } const [rows] = await pool.query(`SELECT * FROM projects ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY featured DESC, id DESC`, values); res.json(rows); } catch { res.status(503).json({ error: "Could not load projects" }); }
+});
 app.get("/api/:resource", async (req, res, next) => {
   const resource = resources[req.params.resource];
   if (!resource || req.params.resource === "blogs") return next();
