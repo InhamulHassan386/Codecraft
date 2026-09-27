@@ -10,7 +10,7 @@ const filters = ["All", "Web", "Mobile", "UI/UX", "Software", "E-Commerce"];
 export default function Portfolio() {
   const [filter, setFilter] = useState("All");
   const [projectRows, setProjectRows] = useState<any[]>(projects);
-  useEffect(() => { fetch("/api/projects?published=true").then((r) => r.ok ? r.json() : Promise.reject()).then((rows) => { if (Array.isArray(rows) && rows.length) setProjectRows(rows.map((p) => ({ ...p, name: p.name || p.title }))); }).catch(() => {}); }, []);
+  useEffect(() => { fetch("/api/projects?published=true").then((r) => r.ok ? r.json() : Promise.reject()).then((rows) => { if (Array.isArray(rows) && rows.length) setProjectRows(rows.map((p: any) => ({ ...p, name: p.name || p.title, longDescription: p.longDescription || p.long_description || p.description || "", technologies: Array.isArray(p.technologies) ? p.technologies : JSON.parse(p.technologies || "[]"), results: Array.isArray(p.results) ? p.results : JSON.parse(p.results || "[]") }))); }).catch(() => {}); }, []);
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const { open } = useQuote();
   const list = filter === "All" ? projectRows : projectRows.filter((p) => p.category === filter);
