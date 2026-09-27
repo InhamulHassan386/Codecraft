@@ -7,7 +7,8 @@ import jwt from "jsonwebtoken";
 
 dotenv.config();
 const app = express();
-app.use(cors());
+const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173").split(",").map((origin) => origin.trim()).filter(Boolean);
+app.use(cors({ origin: (origin, callback) => !origin || allowedOrigins.includes(origin) ? callback(null, true) : callback(new Error("Origin not allowed")) }));
 app.use(express.json({ limit: "10mb" }));
 const port = Number(process.env.PORT || 8787);
 const pool = mysql.createPool({
@@ -20,7 +21,8 @@ const pool = mysql.createPool({
   connectionLimit: 10,
 });
 
-const JWT_SECRET = process.env.JWT_SECRET || "change-this-in-production";
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET && process.env.NODE_ENV === "production") throw new Error("JWT_SECRET is required in production");
 app.post("/api/auth/register", async (req, res) => {
   const { name, email, password, role = "Editor" } = req.body;
   if (!name || !email || !password || password.length < 8) return res.status(400).json({ error: "Name, email and an 8+ character password are required" });
