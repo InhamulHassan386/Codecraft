@@ -9,7 +9,6 @@ import {
 import { projects, team, blogPosts, jobs, testimonials } from "../data/content";
 import { Counter } from "../components/layout";
 import { cn } from "../utils/cn";
-import ServiceManagement from "../components/ServiceManagement";
 
 type Tab = "dashboard" | "projects" | "services" | "team" | "testimonials" | "blog" | "careers" | "messages" | "quotes" | "settings";
 
@@ -369,7 +368,11 @@ export default function Admin() {
               )}
 
               {tab === "services" && (
-                <ServiceManagement />
+                <TableCard title="Services" sub="Manage services stored in the database." action="Add Service">
+                  {(serviceRows.length ? serviceRows : ["Web Development", "Mobile App Development", "UI/UX Design", "Software Development", "E-Commerce Development", "AI & Automation", "Cloud Solutions", "Maintenance & Support"].map((title) => ({ title }))).map((service: any, i) => (
+                    <div key={service.id || service.title} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ink font-mono text-[12px] font-bold text-white">{String(i + 1).padStart(2, "0")}</span><span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{service.title}</span><span className="block text-[12px] text-muted">{service.tagline || "Visible on homepage"}</span></span><span className="hidden md:block"><StatusPill s={service.published === false ? "Draft" : "Live"} /></span><RowActions /></div>
+                  ))}
+                </TableCard>
               )}
 
               {tab === "team" && (
