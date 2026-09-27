@@ -92,6 +92,8 @@ export default function Admin() {
   const [authed, setAuthed] = useState(false);
   const [projectRows, setProjectRows] = useState<any[]>(projects);
   const [serviceRows, setServiceRows] = useState<any[]>([]);
+  const [teamRows, setTeamRows] = useState<any[]>([]);
+  const [testimonialRows, setTestimonialRows] = useState<any[]>([]);
   const [projectModal, setProjectModal] = useState<{ mode: "add" | "edit"; item?: any } | null>(null);
   const [projectMessage, setProjectMessage] = useState("");
   const [projectSearch, setProjectSearch] = useState("");
@@ -107,6 +109,8 @@ export default function Admin() {
   useEffect(() => {
     Promise.all(["projects", "services", "team", "testimonials", "blogs", "jobs", "messages", "quotes", "applications"].map(async (resource) => { const response = await fetch(`/api/${resource}`); return [resource, response.ok ? (await response.json()).length : 0] as const; })).then((entries) => setRecordCounts(Object.fromEntries(entries))).catch(() => {});
     fetch("/api/dashboard/revenue").then((r) => r.ok ? r.json() : Promise.reject()).then((rows) => setRevenueData(rows.map((r: any) => ({ label: r.label, amount: Number(r.amount) })))).catch(() => setRevenueData(revenue.map((v, i) => ({ label: ["J","F","M","A","M","J","J","A","S","O","N","D"][i], amount: v * 1000 }))));
+    fetch("/api/team").then((r) => r.ok ? r.json() : []).then((rows) => { if (Array.isArray(rows) && rows.length) setTeamRows(rows); }).catch(() => {});
+    fetch("/api/testimonials").then((r) => r.ok ? r.json() : []).then((rows) => { if (Array.isArray(rows) && rows.length) setTestimonialRows(rows); }).catch(() => {});
     fetch("/api/services").then((r) => r.ok ? r.json() : []).then((rows) => { if (Array.isArray(rows) && rows.length) setServiceRows(rows); }).catch(() => {});
     fetch("/api/projects").then((response) => response.ok ? response.json() : Promise.reject()).then((rows) => {
       if (Array.isArray(rows) && rows.length > 0) setProjectRows(rows);
@@ -373,7 +377,7 @@ export default function Admin() {
 
               {tab === "team" && (
                 <TableCard title="Team Members" sub="Manage profiles shown on Team page." action="Add Member">
-                  {team.map((m) => (
+                  {(teamRows.length ? teamRows : team).map((m) => (
                     <div key={m.name} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
                       <img src={m.image} alt={m.name} className="h-11 w-11 rounded-xl object-cover" />
                       <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{m.name}</span><span className="block truncate text-[12px] text-muted">{m.role} · {m.location}</span></span>
@@ -386,7 +390,7 @@ export default function Admin() {
 
               {tab === "testimonials" && (
                 <TableCard title="Testimonials" sub="Client reviews rotating on the homepage." action="Add Testimonial">
-                  {testimonials.map((t) => (
+                  {(testimonialRows.length ? testimonialRows : testimonials).map((t) => (
                     <div key={t.name} className="gap-4 border-b border-line px-5 py-4 last:border-0 sm:flex sm:items-center">
                       <img src={t.image} alt={t.name} className="h-11 w-11 shrink-0 rounded-xl object-cover" />
                       <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{t.name} · {t.company}</span><span className="block truncate text-[12px] text-muted">"{t.review.slice(0, 80)}…"</span></span>
