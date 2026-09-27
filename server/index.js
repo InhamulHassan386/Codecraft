@@ -71,6 +71,7 @@ app.post("/api/blogs", async (req, res) => {
     res.status(201).json(rows[0]);
   } catch (error) { res.status(400).json({ error: error.code === "ER_DUP_ENTRY" ? "Slug already exists" : "Could not create post" }); }
 });
+app.put("/api/blogs/:id", async (req, res) => { const { slug,title,excerpt,content,category,date,readTime,image,author,authorRole,featured=false,published=true } = req.body; if (!slug || !title || !excerpt || !category) return res.status(400).json({ error: "Required blog fields are missing" }); try { await pool.execute("UPDATE blog_posts SET slug=?,title=?,excerpt=?,content=?,category=?,date=?,read_time=?,image=?,author=?,author_role=?,featured=?,published=? WHERE id=?", [slug,title,excerpt,content || "",category,date || "",readTime || "",image || "",author || "",authorRole || "",featured ? 1 : 0,published ? 1 : 0,req.params.id]); const [rows] = await pool.query(`SELECT ${fields} FROM blog_posts WHERE id=?`, [req.params.id]); if (!rows[0]) return res.status(404).json({ error: "Post not found" }); res.json(rows[0]); } catch { res.status(400).json({ error: "Could not update post" }); } });
 app.delete("/api/blogs/:id", async (req, res) => {
   try { const [result] = await pool.execute("DELETE FROM blog_posts WHERE id = ?", [req.params.id]); if (!result.affectedRows) return res.status(404).json({ error: "Post not found" }); res.status(204).end(); }
   catch { res.status(400).json({ error: "Could not delete post" }); }
