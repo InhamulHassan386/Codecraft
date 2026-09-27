@@ -91,6 +91,7 @@ export default function Admin() {
   const [sidebar, setSidebar] = useState(false);
   const [authed, setAuthed] = useState(false);
   const [projectRows, setProjectRows] = useState<any[]>(projects);
+  const [serviceRows, setServiceRows] = useState<any[]>([]);
   const [projectModal, setProjectModal] = useState<{ mode: "add" | "edit"; item?: any } | null>(null);
   const [projectMessage, setProjectMessage] = useState("");
   const [projectSearch, setProjectSearch] = useState("");
@@ -106,6 +107,7 @@ export default function Admin() {
   useEffect(() => {
     Promise.all(["projects", "services", "team", "testimonials", "blogs", "jobs", "messages", "quotes", "applications"].map(async (resource) => { const response = await fetch(`/api/${resource}`); return [resource, response.ok ? (await response.json()).length : 0] as const; })).then((entries) => setRecordCounts(Object.fromEntries(entries))).catch(() => {});
     fetch("/api/dashboard/revenue").then((r) => r.ok ? r.json() : Promise.reject()).then((rows) => setRevenueData(rows.map((r: any) => ({ label: r.label, amount: Number(r.amount) })))).catch(() => setRevenueData(revenue.map((v, i) => ({ label: ["J","F","M","A","M","J","J","A","S","O","N","D"][i], amount: v * 1000 }))));
+    fetch("/api/services").then((r) => r.ok ? r.json() : []).then((rows) => { if (Array.isArray(rows) && rows.length) setServiceRows(rows); }).catch(() => {});
     fetch("/api/projects").then((response) => response.ok ? response.json() : Promise.reject()).then((rows) => {
       if (Array.isArray(rows) && rows.length > 0) setProjectRows(rows);
     }).catch(() => setProjectMessage("Projects load nahi huay. Backend aur MySQL start karein."));
@@ -362,14 +364,9 @@ export default function Admin() {
               )}
 
               {tab === "services" && (
-                <TableCard title="Services" sub="Control the 8 services displayed across the site." action="Add Service">
-                  {["Web Development", "Mobile App Development", "UI/UX Design", "Software Development", "E-Commerce Development", "AI & Automation", "Cloud Solutions", "Maintenance & Support"].map((s, i) => (
-                    <div key={s} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ink font-mono text-[12px] font-bold text-white">{String(i + 1).padStart(2, "0")}</span>
-                      <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{s}</span><span className="block text-[12px] text-muted">8 features · visible on homepage</span></span>
-                      <span className="hidden md:block"><StatusPill s="Live" /></span>
-                      <RowActions />
-                    </div>
+                <TableCard title="Services" sub="Manage services stored in the database." action="Add Service">
+                  {(serviceRows.length ? serviceRows : ["Web Development", "Mobile App Development", "UI/UX Design", "Software Development", "E-Commerce Development", "AI & Automation", "Cloud Solutions", "Maintenance & Support"].map((title) => ({ title }))).map((service: any, i) => (
+                    <div key={service.id || service.title} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ink font-mono text-[12px] font-bold text-white">{String(i + 1).padStart(2, "0")}</span><span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{service.title}</span><span className="block text-[12px] text-muted">{service.tagline || "Visible on homepage"}</span></span><span className="hidden md:block"><StatusPill s={service.published === false ? "Draft" : "Live"} /></span><RowActions /></div>
                   ))}
                 </TableCard>
               )}
