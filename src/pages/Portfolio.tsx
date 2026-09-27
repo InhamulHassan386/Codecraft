@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, ArrowUpRight, Calendar, User, Clock3 } from "lucide-react";
 import { projects } from "../data/content";
@@ -9,10 +9,12 @@ const filters = ["All", "Web", "Mobile", "UI/UX", "Software", "E-Commerce"];
 
 export default function Portfolio() {
   const [filter, setFilter] = useState("All");
+  const [projectRows, setProjectRows] = useState<any[]>(projects);
+  useEffect(() => { fetch("/api/projects?published=true").then((r) => r.ok ? r.json() : Promise.reject()).then((rows) => { if (Array.isArray(rows) && rows.length) setProjectRows(rows.map((p) => ({ ...p, name: p.name || p.title }))); }).catch(() => {}); }, []);
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const { open } = useQuote();
-  const list = filter === "All" ? projects : projects.filter((p) => p.category === filter);
-  const active = projects.find((p) => p.slug === activeSlug);
+  const list = filter === "All" ? projectRows : projectRows.filter((p) => p.category === filter);
+  const active = projectRows.find((p) => p.slug === activeSlug);
 
   return (
     <>
