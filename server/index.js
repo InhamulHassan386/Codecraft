@@ -23,6 +23,8 @@ const pool = mysql.createPool({
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET && process.env.NODE_ENV === "production") throw new Error("JWT_SECRET is required in production");
+function requireAuth(req, res, next) { const header = req.headers.authorization || ""; try { if (!header.startsWith("Bearer ")) throw new Error(); req.auth = jwt.verify(header.slice(7), JWT_SECRET || "development-secret"); next(); } catch { res.status(401).json({ error: "Authentication required" }); } }
+function requireSuperAdmin(req, res, next) { if (req.auth?.role !== "Super Admin") return res.status(403).json({ error: "Super Admin access required" }); next(); }
 app.get("/api/auth/me", requireAuth, async (req, res) => { try { const [rows] = await pool.query("SELECT id,name,email,role,is_active AS isActive,last_login AS lastLogin,profile_image AS profileImage FROM admin_users WHERE id=? AND is_active=1", [req.auth.id]); if (!rows[0]) return res.status(401).json({ error: "Account inactive" }); res.json(rows[0]); } catch { res.status(503).json({ error: "Could not load session" }); } });
 app.post("/api/auth/register", async (req, res) => {
   const { name, email, password, role = "Editor" } = req.body;
