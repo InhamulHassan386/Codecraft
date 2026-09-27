@@ -85,12 +85,12 @@ export default function Portfolio() {
                   </div>
                   <p className="mt-3 text-sm leading-relaxed text-muted">{p.longDescription.slice(0, 160)}…</p>
                   <div className="mt-4 flex flex-wrap gap-1.5">
-                    {p.technologies.map((t) => (
+                    {p.technologies.map((t: any) => (
                       <span key={t} className="rounded-md bg-paper px-2.5 py-1 text-[11.5px] font-semibold text-charcoal/70">{t}</span>
                     ))}
                   </div>
                   <div className="mt-5 grid grid-cols-3 gap-3 rounded-2xl bg-paper p-4">
-                    {p.results.map((r) => (
+                    {p.results.map((r: any) => (
                       <div key={r.label} className="text-center">
                         <p className="font-display text-lg font-extrabold text-brand sm:text-xl">{r.value}</p>
                         <p className="mt-0.5 text-[11px] font-medium leading-tight text-muted">{r.label}</p>
@@ -146,7 +146,7 @@ export default function Portfolio() {
               <p className="mt-2 text-[15px] leading-relaxed text-muted">{active.longDescription}</p>
               <h4 className="font-display mt-6 text-lg font-bold text-charcoal">Measured Results</h4>
               <div className="mt-3 grid grid-cols-3 gap-3">
-                {active.results.map((r) => (
+                {active.results.map((r: any) => (
                   <div key={r.label} className="rounded-xl border border-brand/20 bg-brand-light p-4 text-center">
                     <p className="font-display text-xl font-extrabold text-brand sm:text-2xl">{r.value}</p>
                     <p className="mt-1 text-[11.5px] font-medium text-charcoal/70">{r.label}</p>
@@ -154,7 +154,7 @@ export default function Portfolio() {
                 ))}
               </div>
               <div className="mt-4 flex flex-wrap gap-1.5">
-                {active.technologies.map((t) => (
+                {active.technologies.map((t: any) => (
                   <span key={t} className="rounded-md bg-ink px-3 py-1.5 text-[12px] font-semibold text-white">{t}</span>
                 ))}
               </div>
