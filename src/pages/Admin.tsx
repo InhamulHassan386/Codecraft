@@ -510,7 +510,7 @@ export default function Admin() {
             {imageError && <p className="mt-2 text-xs font-semibold text-red-600">{imageError}</p>}
             {imagePreview && <button type="button" onClick={() => { setImagePreview(""); setUploadedImageData(""); setImageError(""); }} className="mt-2 text-xs font-semibold text-red-600">Remove image</button>}
           </div>
-          <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setProjectModal(null)} className="rounded-xl border border-line px-4 py-2.5 font-semibold">Cancel</button><button disabled={!!imageError || (!imagePreview && !projectModal.item?.image)} className="btn-primary rounded-xl px-5 py-2.5 font-semibold disabled:cursor-not-allowed disabled:opacity-50">Save Project</button></div>
+          <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setProjectModal(null)} className="rounded-xl border border-line px-4 py-2.5 font-semibold">Cancel</button><button disabled={!!imageError} className="btn-primary rounded-xl px-5 py-2.5 font-semibold disabled:cursor-not-allowed disabled:opacity-50">Save Project</button></div>
         </form>
       </div>}
     </div>
