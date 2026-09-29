@@ -81,6 +81,9 @@ export default function Admin() {
   const [sidebar, setSidebar] = useState(false);
   const [authed, setAuthed] = useState(false);
   const [liveStats, setLiveStats] = useState({ projects: 0, messages: 0, quotes: 0, services: 0, team: 0, testimonials: 0, blogs: 0, jobs: 0, applications: 0 });
+  const [recentMessages, setRecentMessages] = useState<any[]>([]);
+  const [recentQuotes, setRecentQuotes] = useState<any[]>([]);
+  const [dashboardLoading, setDashboardLoading] = useState(true);
   const [projectRows, setProjectRows] = useState<any[]>(projects);
   const [projectModal, setProjectModal] = useState<{ mode: "add" | "edit"; item?: any } | null>(null);
   const [projectMessage, setProjectMessage] = useState("");
@@ -301,9 +304,9 @@ export default function Admin() {
                         <button onClick={() => setTab("quotes")} className="text-[13px] font-bold text-brand">View all →</button>
                       </div>
                       <div className="divide-y divide-line">
-                        {(recentQuotes.length ? recentQuotes : mockQuotes.slice(0, 4)).map((q) => (
+                        {(recentQuotes.length ? recentQuotes : mockQuotes.slice(0, 4)).map((q: any) => (
                           <div key={q.contact} className="flex items-center gap-3 px-5 py-3.5">
-                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ink text-[12px] font-bold text-white">{q.contact.split(" ").map((w) => w[0]).join("")}</span>
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ink text-[12px] font-bold text-white">{q.contact.split(" ").map((w: string) => w[0]).join("")}</span>
                             <span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold">{q.name}</span><span className="block truncate text-[12px] text-muted">{q.service} · {q.budget}</span></span>
                             <StatusPill s={q.status} />
                           </div>
@@ -316,9 +319,9 @@ export default function Admin() {
                         <button onClick={() => setTab("messages")} className="text-[13px] font-bold text-brand">View all →</button>
                       </div>
                       <div className="divide-y divide-line">
-                        {(recentMessages.length ? recentMessages : mockMessages.slice(0, 4)).map((m) => (
+                        {(recentMessages.length ? recentMessages : mockMessages.slice(0, 4)).map((m: any) => (
                           <div key={m.email} className="flex items-center gap-3 px-5 py-3.5">
-                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-light text-[12px] font-bold text-brand">{m.name.split(" ").map((w) => w[0]).join("")}</span>
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-light text-[12px] font-bold text-brand">{m.name.split(" ").map((w: string) => w[0]).join("")}</span>
                             <span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold">{m.subject}</span><span className="block truncate text-[12px] text-muted">{m.name} · {m.date}</span></span>
                             <StatusPill s={m.status} />
                           </div>
@@ -360,7 +363,7 @@ export default function Admin() {
 
               {tab === "team" && (
                 <TableCard title="Team Members" sub="Manage profiles shown on Team page." action="Add Member">
-                  {team.map((m) => (
+                  {team.map((m: any) => (
                     <div key={m.name} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
                       <img src={m.image} alt={m.name} className="h-11 w-11 rounded-xl object-cover" />
                       <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{m.name}</span><span className="block truncate text-[12px] text-muted">{m.role} · {m.location}</span></span>
@@ -410,7 +413,7 @@ export default function Admin() {
                   <TableCard title="Job Applications" sub="Candidates waiting for review." action="Export CSV">
                     {mockApps.map((a) => (
                       <div key={a.name} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-light text-[12px] font-bold text-brand">{a.name.split(" ").map((w) => w[0]).join("")}</span>
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-light text-[12px] font-bold text-brand">{a.name.split(" ").map((w: string) => w[0]).join("")}</span>
                         <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{a.name}</span><span className="block text-[12px] text-muted">{a.role} · {a.exp} · {a.date}</span></span>
                         <StatusPill s={a.status} />
                         <div className="hidden sm:block"><RowActions /></div>
@@ -422,9 +425,9 @@ export default function Admin() {
 
               {tab === "messages" && (
                 <TableCard title="Contact Messages" sub="Inquiries from the contact form." action="Mark all read">
-                  {mockMessages.map((m) => (
+                  {mockMessages.map((m: any) => (
                     <div key={m.email} className="gap-3 border-b border-line px-5 py-4 last:border-0 sm:flex sm:items-center">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-light text-[12px] font-bold text-brand">{m.name.split(" ").map((w) => w[0]).join("")}</span>
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-light text-[12px] font-bold text-brand">{m.name.split(" ").map((w: string) => w[0]).join("")}</span>
                       <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-bold">{m.subject}</span><span className="block truncate text-[12px] text-muted">{m.name} · {m.email} · {m.service}</span></span>
                       <span className="mt-2 flex items-center gap-2 sm:mt-0"><span className="text-[11.5px] text-muted">{m.date}</span><StatusPill s={m.status} /><RowActions /></span>
                     </div>
@@ -434,9 +437,9 @@ export default function Admin() {
 
               {tab === "quotes" && (
                 <TableCard title="Quote Requests" sub="Leads from the Get-a-Quote system." action="Export leads">
-                  {mockQuotes.map((q) => (
+                  {mockQuotes.map((q: any) => (
                     <div key={q.contact} className="gap-3 border-b border-line px-5 py-4 last:border-0 sm:flex sm:items-center">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ink text-[12px] font-bold text-white">{q.contact.split(" ").map((w) => w[0]).join("")}</span>
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ink text-[12px] font-bold text-white">{q.contact.split(" ").map((w: string) => w[0]).join("")}</span>
                       <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{q.name} <span className="font-normal text-muted">· {q.contact}</span></span><span className="block text-[12px] text-muted">{q.service} · Budget {q.budget}</span></span>
                       <span className="mt-2 flex items-center gap-2 sm:mt-0"><span className="text-[11.5px] text-muted">{q.date}</span><StatusPill s={q.status} /><RowActions /></span>
                     </div>
