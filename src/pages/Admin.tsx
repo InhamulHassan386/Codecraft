@@ -126,7 +126,7 @@ export default function Admin() {
     } catch { setProjectMessage("Project delete nahi hua. API/database check karein."); }
   };
 
-  useEffect(() => { fetch("/api/dashboard/summary").then((r) => r.ok ? r.json() : Promise.reject()).then((summary) => setLiveStats({ projects: summary.projects || 0, messages: summary.contact_messages || 0, quotes: summary.quote_requests || 0, services: summary.services || 0, team: summary.team_members || 0, testimonials: summary.testimonials || 0, blogs: summary.blog_posts || 0, jobs: summary.jobs || 0, applications: summary.job_applications || 0 })).catch(() => {}); }, []);
+  useEffect(() => { fetch("/api/dashboard/recent").then((r) => r.ok ? r.json() : Promise.reject()).then((data) => { setRecentMessages(data.messages || []); setRecentQuotes(data.quotes || []); }).finally(() => setDashboardLoading(false)); fetch("/api/dashboard/summary").then((r) => r.ok ? r.json() : Promise.reject()).then((summary) => setLiveStats({ projects: summary.projects || 0, messages: summary.contact_messages || 0, quotes: summary.quote_requests || 0, services: summary.services || 0, team: summary.team_members || 0, testimonials: summary.testimonials || 0, blogs: summary.blog_posts || 0, jobs: summary.jobs || 0, applications: summary.job_applications || 0 })).catch(() => {}); }, []);
 
   const stats = useMemo(() => [
     { label: "Total Projects", value: liveStats.projects, icon: FolderKanban, delta: "+4 this month", color: "bg-brand" },
@@ -233,7 +233,7 @@ export default function Admin() {
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <h1 className="font-display text-2xl font-extrabold text-charcoal">Good morning, Admin 👋</h1>
-                      <p className="text-sm text-muted">Here's what's happening across your website today.</p>
+                      <p className="text-sm text-muted">Here's what's happening across your website today.</p>{dashboardLoading && <p className="text-xs text-brand">Loading live data...</p>}
                     </div>
                     <div className="flex gap-2">
                       <button className="flex items-center gap-1.5 rounded-xl border border-line bg-white px-4 py-2.5 text-[13px] font-semibold"><Filter className="h-4 w-4" /> Last 30 days</button>
@@ -301,7 +301,7 @@ export default function Admin() {
                         <button onClick={() => setTab("quotes")} className="text-[13px] font-bold text-brand">View all →</button>
                       </div>
                       <div className="divide-y divide-line">
-                        {mockQuotes.slice(0, 4).map((q) => (
+                        {(recentQuotes.length ? recentQuotes : mockQuotes.slice(0, 4)).map((q) => (
                           <div key={q.contact} className="flex items-center gap-3 px-5 py-3.5">
                             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ink text-[12px] font-bold text-white">{q.contact.split(" ").map((w) => w[0]).join("")}</span>
                             <span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold">{q.name}</span><span className="block truncate text-[12px] text-muted">{q.service} · {q.budget}</span></span>
@@ -316,7 +316,7 @@ export default function Admin() {
                         <button onClick={() => setTab("messages")} className="text-[13px] font-bold text-brand">View all →</button>
                       </div>
                       <div className="divide-y divide-line">
-                        {mockMessages.slice(0, 4).map((m) => (
+                        {(recentMessages.length ? recentMessages : mockMessages.slice(0, 4)).map((m) => (
                           <div key={m.email} className="flex items-center gap-3 px-5 py-3.5">
                             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-light text-[12px] font-bold text-brand">{m.name.split(" ").map((w) => w[0]).join("")}</span>
                             <span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold">{m.subject}</span><span className="block truncate text-[12px] text-muted">{m.name} · {m.date}</span></span>
