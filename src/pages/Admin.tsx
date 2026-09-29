@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -66,12 +66,12 @@ function StatusPill({ s }: { s: string }) {
   return <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold", map[s] || "bg-slate-100 text-slate-600")}><span className="h-1.5 w-1.5 rounded-full bg-current" />{s}</span>;
 }
 
-function RowActions() {
+function RowActions({ onEdit, onDelete, onView }: { onEdit?: () => void; onDelete?: () => void; onView?: () => void }) {
   return (
     <div className="flex justify-end gap-1.5">
-      <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-brand hover:text-brand" title="View"><Eye className="h-4 w-4" /></button>
-      <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-brand hover:text-brand" title="Edit"><Pencil className="h-4 w-4" /></button>
-      <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-red-400 hover:text-red-500" title="Delete"><Trash2 className="h-4 w-4" /></button>
+      <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-brand hover:text-brand" onClick={onView} title="View"><Eye className="h-4 w-4" /></button>
+      <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-brand hover:text-brand" onClick={onEdit} title="Edit"><Pencil className="h-4 w-4" /></button>
+      <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-red-400 hover:text-red-500" onClick={onDelete} title="Delete"><Trash2 className="h-4 w-4" /></button>
     </div>
   );
 }
@@ -80,14 +80,61 @@ export default function Admin() {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [sidebar, setSidebar] = useState(false);
   const [authed, setAuthed] = useState(false);
+  const [liveStats, setLiveStats] = useState({ projects: 0, messages: 0, quotes: 0, services: 0, team: 0, testimonials: 0, blogs: 0, jobs: 0, applications: 0 });
+  const [projectRows, setProjectRows] = useState<any[]>(projects);
+  const [projectModal, setProjectModal] = useState<{ mode: "add" | "edit"; item?: any } | null>(null);
+  const [projectMessage, setProjectMessage] = useState("");
+  const [projectSearch, setProjectSearch] = useState("");
+  const [imageUploaded, setImageUploaded] = useState(false);
+  const [uploadedImageData, setUploadedImageData] = useState("");
+
+  useEffect(() => {
+    fetch("/api/projects").then((response) => response.ok ? response.json() : Promise.reject()).then((rows) => {
+      if (Array.isArray(rows) && rows.length > 0) setProjectRows(rows);
+    }).catch(() => setProjectMessage("Projects load nahi huay. Backend aur MySQL start karein."));
+  }, []);
+
+  const saveProject = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const raw = Object.fromEntries(new FormData(event.currentTarget).entries());
+    let image = String(raw.image || "");
+    const imageFile = raw.imageFile as File;
+    if (uploadedImageData) image = uploadedImageData;
+    else if (imageFile?.size) image = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(imageFile);
+    });
+    const data = { ...raw, image, name: raw.name || raw.title, description: raw.description || "", long_description: raw.long_description || raw.description || "", technologies: JSON.stringify(String(raw.technologies || "").split(",").map((v) => v.trim()).filter(Boolean)), results: JSON.stringify(String(raw.results || "").split(",").map((v) => v.trim()).filter(Boolean)), duration: raw.duration || "Not specified", published: 1 };
+    delete (data as any).imageFile;
+    delete (data as any).title;
+    try {
+      const editing = projectModal?.mode === "edit";
+      const response = await fetch(editing && projectModal?.item?.id ? `/api/projects/${projectModal.item.id}` : "/api/projects", {
+        method: editing && projectModal?.item?.id ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error("API unavailable");
+      const saved = await response.json();
+      setProjectRows((rows) => editing && projectModal?.item?.id ? rows.map((row) => row.id === saved.id ? saved : row) : [saved, ...rows]);
+      setProjectModal(null); setProjectMessage("");
+    } catch { setProjectMessage("Backend/database connect nahi hai. MySQL aur API start karein."); }
+  };
+  const deleteProject = async (item: any) => {
+    if (!window.confirm(`Delete ${item.name || item.title}?`)) return;
+    try {
+      const response = await fetch(`/api/projects/${item.id}`, { method: "DELETE" });
+      if (!response.ok) throw new Error();
+      setProjectRows((rows) => rows.filter((row) => row.id !== item.id));
+    } catch { setProjectMessage("Project delete nahi hua. API/database check karein."); }
+  };
+
+  useEffect(() => { fetch("/api/dashboard/recent").then((r) => r.ok ? r.json() : Promise.reject()).then((data) => { setRecentMessages(data.messages || []); setRecentQuotes(data.quotes || []); }).finally(() => setDashboardLoading(false)); fetch("/api/dashboard/summary").then((r) => r.ok ? r.json() : Promise.reject()).then((summary) => setLiveStats({ projects: summary.projects || 0, messages: summary.contact_messages || 0, quotes: summary.quote_requests || 0, services: summary.services || 0, team: summary.team_members || 0, testimonials: summary.testimonials || 0, blogs: summary.blog_posts || 0, jobs: summary.jobs || 0, applications: summary.job_applications || 0 })).catch(() => {}); }, []);
 
   const stats = useMemo(() => [
-    { label: "Total Projects", value: 52, icon: FolderKanban, delta: "+4 this month", color: "bg-brand" },
-    { label: "Total Messages", value: 148, icon: MessageSquare, delta: "+12 unread", color: "bg-violet-500" },
-    { label: "Applications", value: 86, icon: FileText, delta: "+9 this week", color: "bg-amber-500" },
+    { label: "Total Projects", value: liveStats.projects, icon: FolderKanban, delta: "+4 this month", color: "bg-brand" },
+    { label: "Total Messages", value: liveStats.messages, icon: MessageSquare, delta: "+12 unread", color: "bg-violet-500" },
+    { label: "Applications", value: liveStats.applications, icon: FileText, delta: "+9 this week", color: "bg-amber-500" },
     { label: "Blog Posts", value: blogPosts.length, icon: PenLine, delta: "2 drafts", color: "bg-emerald-500" },
-    { label: "Quote Requests", value: 34, icon: QuoteIcon, delta: "7 pending", color: "bg-rose-500" },
-  ], []);
+    { label: "Quote Requests", value: liveStats.quotes, icon: QuoteIcon, delta: "7 pending", color: "bg-rose-500" },
+  ], [liveStats]);
 
   if (!authed) {
     return (
@@ -186,11 +233,11 @@ export default function Admin() {
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <h1 className="font-display text-2xl font-extrabold text-charcoal">Good morning, Admin 👋</h1>
-                      <p className="text-sm text-muted">Here's what's happening across your website today.</p>
+                      <p className="text-sm text-muted">Here's what's happening across your website today.</p>{dashboardLoading && <p className="text-xs text-brand">Loading live data...</p>}
                     </div>
                     <div className="flex gap-2">
                       <button className="flex items-center gap-1.5 rounded-xl border border-line bg-white px-4 py-2.5 text-[13px] font-semibold"><Filter className="h-4 w-4" /> Last 30 days</button>
-                      <button className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> New Project</button>
+                      <button onClick={() => { setTab("projects"); setProjectModal({ mode: "add" }); }} className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> New Project</button>
                     </div>
                   </div>
 
@@ -254,7 +301,7 @@ export default function Admin() {
                         <button onClick={() => setTab("quotes")} className="text-[13px] font-bold text-brand">View all →</button>
                       </div>
                       <div className="divide-y divide-line">
-                        {mockQuotes.slice(0, 4).map((q) => (
+                        {(recentQuotes.length ? recentQuotes : mockQuotes.slice(0, 4)).map((q) => (
                           <div key={q.contact} className="flex items-center gap-3 px-5 py-3.5">
                             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ink text-[12px] font-bold text-white">{q.contact.split(" ").map((w) => w[0]).join("")}</span>
                             <span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold">{q.name}</span><span className="block truncate text-[12px] text-muted">{q.service} · {q.budget}</span></span>
@@ -269,7 +316,7 @@ export default function Admin() {
                         <button onClick={() => setTab("messages")} className="text-[13px] font-bold text-brand">View all →</button>
                       </div>
                       <div className="divide-y divide-line">
-                        {mockMessages.slice(0, 4).map((m) => (
+                        {(recentMessages.length ? recentMessages : mockMessages.slice(0, 4)).map((m) => (
                           <div key={m.email} className="flex items-center gap-3 px-5 py-3.5">
                             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-light text-[12px] font-bold text-brand">{m.name.split(" ").map((w) => w[0]).join("")}</span>
                             <span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold">{m.subject}</span><span className="block truncate text-[12px] text-muted">{m.name} · {m.date}</span></span>
@@ -283,16 +330,19 @@ export default function Admin() {
               )}
 
               {tab === "projects" && (
-                <TableCard title="Projects" sub="Manage portfolio case studies shown on the website." action="Add Project">
-                  {projects.map((p) => (
+                <>
+                <TableCard title="Projects" sub="Manage portfolio case studies shown on the website." action="Add Project" onAction={() => setProjectModal({ mode: "add" })} searchValue={projectSearch} onSearch={setProjectSearch}>
+                  {projectRows.filter((p) => `${p.name || ""} ${p.title || ""} ${p.category || ""} ${p.client || ""}`.toLowerCase().includes(projectSearch.toLowerCase())).map((p) => (
                     <div key={p.slug} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
                       <img src={p.image} alt={p.name} className="hidden h-12 w-16 rounded-lg object-cover sm:block" />
                       <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-bold">{p.name}</span><span className="block text-[12px] text-muted">{p.category} · {p.client} · {p.year}</span></span>
                       <span className="hidden md:block"><StatusPill s="Live" /></span>
-                      <RowActions />
+                      <RowActions onEdit={() => setProjectModal({ mode: "edit", item: p })} onDelete={() => deleteProject(p)} onView={() => setProjectModal({ mode: "edit", item: p })} />
                     </div>
                   ))}
                 </TableCard>
+                {projectMessage && <p className="p-4 text-sm text-red-600">{projectMessage}</p>}
+                </>
               )}
 
               {tab === "services" && (
@@ -421,18 +471,38 @@ export default function Admin() {
           </AnimatePresence>
         </main>
       </div>
+      {projectModal && <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4" role="dialog" aria-modal="true">
+        <form onSubmit={saveProject} className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+          <div className="flex items-center justify-between"><h2 className="font-display text-xl font-extrabold">{projectModal.mode === "add" ? "Add Project" : "Edit Project"}</h2><button type="button" onClick={() => setProjectModal(null)} aria-label="Close project dialog" className="text-2xl text-muted">×</button></div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            {[["name","Project name"],["slug","Slug"],["category","Category"],["client","Client"],["year","Year"],["duration","Duration"],["technologies","Technologies (comma separated)"],["results","Results (comma separated)"],["description","Short description"]].map(([name,label]) => <label key={name} className="text-sm font-semibold">{label}<input name={name} required={!["image","technologies","results","duration"].includes(name)} defaultValue={projectModal.item?.[name] || (name === "technologies" ? (Array.isArray(projectModal.item?.technologies) ? projectModal.item.technologies.join(", ") : "") : (name === "results" ? (Array.isArray(projectModal.item?.results) ? projectModal.item.results.join(", ") : "") : ""))} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>)}
+            <label className="text-sm font-semibold sm:col-span-2">Detailed description<textarea name="long_description" rows={3} defaultValue={projectModal.item?.long_description || projectModal.item?.description || ""} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>
+          </div>
+          <div className="mt-3 rounded-xl border border-line p-4">
+            <p className="text-sm font-semibold">Project Image</p>
+            <label className="mt-3 flex items-center gap-2 text-sm font-medium"><input type="radio" name="imageSource" value="url" defaultChecked /> Image URL</label>
+            <input name="image" defaultValue={projectModal.item?.image || ""} placeholder="https://example.com/image.jpg" className="mt-2 w-full rounded-xl border border-line px-3 py-2.5 text-sm font-normal" />
+            <div className="my-3 text-center text-xs font-semibold text-muted">OR</div>
+            <label className="flex items-center gap-2 text-sm font-medium"><input type="radio" name="imageSource" value="file" /> Upload Image</label>
+            <input id="project-image-file" name="imageFile" type="file" accept="image/*" className="mt-2 w-full rounded-xl border border-line px-3 py-2.5 text-sm font-normal" />
+            <div className="mt-3 flex gap-2"><button type="button" onClick={() => { const file = (document.getElementById("project-image-file") as HTMLInputElement)?.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { setUploadedImageData(String(reader.result)); setImageUploaded(true); }; reader.readAsDataURL(file); }} className="rounded-xl border border-line px-4 py-2 text-sm font-semibold hover:border-brand hover:text-brand">Upload</button><button type="submit" className="btn-primary rounded-xl px-4 py-2 text-sm font-semibold">Save Image</button></div>
+            {imageUploaded && <p className="mt-2 text-xs font-semibold text-emerald-600">Image ready — Save Image par click karein.</p>}
+          </div>
+          <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setProjectModal(null)} className="rounded-xl border border-line px-4 py-2.5 font-semibold">Cancel</button><button className="btn-primary rounded-xl px-5 py-2.5 font-semibold">Save Project</button></div>
+        </form>
+      </div>}
     </div>
   );
 }
 
-function TableCard({ title, sub, action, children }: { title: string; sub: string; action: string; children: React.ReactNode }) {
+function TableCard({ title, sub, action, onAction, searchValue, onSearch, children }: { title: string; sub: string; action: string; onAction?: () => void; searchValue?: string; onSearch?: (value: string) => void; children: React.ReactNode }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-card">
       <div className="flex flex-wrap items-center justify-between gap-3 p-5">
         <div><h2 className="font-display text-lg font-extrabold">{title}</h2><p className="text-[13px] text-muted">{sub}</p></div>
         <div className="flex gap-2">
-          <button className="flex items-center gap-1.5 rounded-xl border border-line px-4 py-2.5 text-[13px] font-semibold"><Search className="h-4 w-4" /> Search</button>
-          <button className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> {action}</button>
+          {onSearch ? <label className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" /><input value={searchValue || ""} onChange={(event) => onSearch(event.target.value)} placeholder="Search..." className="w-36 rounded-xl border border-line py-2.5 pl-9 pr-3 text-[13px]" /></label> : <button className="flex items-center gap-1.5 rounded-xl border border-line px-4 py-2.5 text-[13px] font-semibold"><Search className="h-4 w-4" /> Search</button>}
+          <button onClick={onAction} className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> {action}</button>
         </div>
       </div>
       <div className="border-t border-line">{children}</div>
