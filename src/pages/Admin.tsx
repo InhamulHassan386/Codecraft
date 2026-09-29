@@ -80,6 +80,7 @@ export default function Admin() {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [sidebar, setSidebar] = useState(false);
   const [authed, setAuthed] = useState(false);
+  const [liveStats, setLiveStats] = useState({ projects: 0, messages: 0, quotes: 0 });
   const [projectRows, setProjectRows] = useState<any[]>(projects);
   const [projectModal, setProjectModal] = useState<{ mode: "add" | "edit"; item?: any } | null>(null);
   const [projectMessage, setProjectMessage] = useState("");
@@ -125,13 +126,15 @@ export default function Admin() {
     } catch { setProjectMessage("Project delete nahi hua. API/database check karein."); }
   };
 
+  useEffect(() => { Promise.all(["projects", "messages", "quotes"].map((resource) => fetch(`/api/${resource}`).then((r) => r.ok ? r.json() : []))).then(([projectsData, messagesData, quotesData]) => setLiveStats({ projects: projectsData.length, messages: messagesData.length, quotes: quotesData.length })).catch(() => {}); }, []);
+
   const stats = useMemo(() => [
-    { label: "Total Projects", value: 52, icon: FolderKanban, delta: "+4 this month", color: "bg-brand" },
-    { label: "Total Messages", value: 148, icon: MessageSquare, delta: "+12 unread", color: "bg-violet-500" },
+    { label: "Total Projects", value: liveStats.projects, icon: FolderKanban, delta: "+4 this month", color: "bg-brand" },
+    { label: "Total Messages", value: liveStats.messages, icon: MessageSquare, delta: "+12 unread", color: "bg-violet-500" },
     { label: "Applications", value: 86, icon: FileText, delta: "+9 this week", color: "bg-amber-500" },
     { label: "Blog Posts", value: blogPosts.length, icon: PenLine, delta: "2 drafts", color: "bg-emerald-500" },
-    { label: "Quote Requests", value: 34, icon: QuoteIcon, delta: "7 pending", color: "bg-rose-500" },
-  ], []);
+    { label: "Quote Requests", value: liveStats.quotes, icon: QuoteIcon, delta: "7 pending", color: "bg-rose-500" },
+  ], [liveStats]);
 
   if (!authed) {
     return (
