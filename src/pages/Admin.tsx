@@ -168,12 +168,12 @@ export default function Admin() {
           </div>
           <div className="relative ml-auto hidden max-w-xs flex-1 md:block">
             <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-2" />
-            <input value={dashboardSearch} onChange={(event) => setDashboardSearch(event.target.value)} placeholder="Search projects, messages…" className="w-full rounded-xl border border-line bg-paper py-2.5 pl-10 pr-4 text-[13px]" />
+            <input placeholder="Search projects, messages…" className="w-full rounded-xl border border-line bg-paper py-2.5 pl-10 pr-4 text-[13px]" />
           </div>
-          <button onClick={() => setNotificationsOpen((open) => !open)} className="relative ml-auto flex h-10 w-10 items-center justify-center rounded-xl border border-line md:ml-0" aria-label="Notifications">
+          <button className="relative ml-auto flex h-10 w-10 items-center justify-center rounded-xl border border-line md:ml-0" aria-label="Notifications">
             <Bell className="h-4.5 w-4.5 h-5 w-5 text-charcoal" />
             <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
-          </button>{notificationsOpen && <div className="absolute right-20 top-14 z-50 w-64 rounded-xl border border-line bg-white p-4 text-sm shadow-card">No new notifications</div>}
+          </button>
           <button className="flex items-center gap-2 rounded-xl border border-line py-1.5 pl-1.5 pr-3">
             <img src={team[0].image} alt="Admin" className="h-7 w-7 rounded-lg object-cover" />
             <span className="hidden text-left sm:block"><span className="block text-[12.5px] font-bold leading-none">Admin</span><span className="mt-0.5 block text-[10.5px] text-muted">Super Admin</span></span>
