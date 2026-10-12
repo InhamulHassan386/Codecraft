@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, ArrowUpRight, Calendar, User, Clock3 } from "lucide-react";
-import { projects } from "../data/content";
+import { useProjects } from "../data/useProjects";
 import { PageHero, Reveal, Counter, CTASection, useQuote } from "../components/layout";
 import { cn } from "../utils/cn";
-
-const filters = ["All", "Web", "Mobile", "UI/UX", "Software", "E-Commerce"];
 
 export default function Portfolio() {
   const [filter, setFilter] = useState("All");
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const { open } = useQuote();
+  const { projects, loading, error, reload } = useProjects();
+  const categories = ["All", ...Array.from(new Set(projects.map((p) => p.category))).sort()];
   const list = filter === "All" ? projects : projects.filter((p) => p.category === filter);
   const active = projects.find((p) => p.slug === activeSlug);
 
@@ -40,7 +40,7 @@ export default function Portfolio() {
           <Reveal>
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="flex flex-wrap gap-2">
-                {filters.map((f) => (
+                {categories.map((f) => (
                   <button
                     key={f}
                     onClick={() => setFilter(f)}
@@ -57,7 +57,17 @@ export default function Portfolio() {
             </div>
           </Reveal>
 
-          <motion.div layout className="mt-8 grid gap-6 lg:grid-cols-2">
+          {loading && projects.length === 0 && <p className="mt-8 text-center text-sm font-medium text-muted">Loading projects…</p>}
+          {!loading && error && (
+            <div className="mt-8 rounded-2xl border border-line bg-white p-8 text-center">
+              <p className="text-sm font-semibold text-charcoal">{error}</p>
+              <button onClick={reload} className="mt-4 rounded-xl border border-line px-5 py-2.5 text-sm font-semibold text-charcoal transition hover:border-brand hover:text-brand">Try again</button>
+            </div>
+          )}
+          {!loading && !error && list.length === 0 && (
+            <p className="mt-8 rounded-2xl border border-line bg-white p-8 text-center text-sm font-medium text-muted">No projects published yet.</p>
+          )}
+          {list.length > 0 && <motion.div layout className="mt-8 grid gap-6 lg:grid-cols-2">
             {list.map((p) => (
               <motion.article
                 key={p.slug}
@@ -106,7 +116,7 @@ export default function Portfolio() {
                 </div>
               </motion.article>
             ))}
-          </motion.div>
+          </motion.div>}
         </div>
       </section>
 

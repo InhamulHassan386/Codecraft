@@ -123,7 +123,7 @@ export const services: Service[] = [
 export type Project = {
   slug: string;
   name: string;
-  category: "Web" | "Mobile" | "UI/UX" | "Software" | "E-Commerce";
+  category: string;
   description: string;
   longDescription: string;
   image: string;
@@ -132,6 +132,13 @@ export type Project = {
   year: string;
   client: string;
   duration: string;
+  // Optional fields returned by /api/public/projects (database-backed projects)
+  id?: number;
+  gallery?: string[];
+  liveUrl?: string | null;
+  githubUrl?: string | null;
+  featured?: boolean;
+  displayOrder?: number;
 };
 
 export const projects: Project[] = [

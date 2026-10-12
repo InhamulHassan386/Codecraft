@@ -5,8 +5,9 @@ import {
   LayoutDashboard, FolderKanban, Briefcase, Users, MessageSquare, FileText, PenLine,
   Quote as QuoteIcon, Settings, Search, Bell, ChevronDown, Plus, Eye, Pencil, Trash2,
   TrendingUp, ArrowUpRight, CheckCircle2, Clock3, XCircle, Menu, X, LogOut, Filter,
+  Star, ChevronLeft, ChevronRight, ExternalLink,
 } from "lucide-react";
-import { projects, team, blogPosts, jobs, testimonials } from "../data/content";
+import { team, blogPosts, jobs, testimonials } from "../data/content";
 import { Counter } from "../components/layout";
 import { cn } from "../utils/cn";
 
@@ -14,7 +15,7 @@ type Tab = "dashboard" | "projects" | "services" | "team" | "testimonials" | "bl
 
 const tabs: { id: Tab; label: string; icon: any; badge?: number }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "projects", label: "Projects", icon: FolderKanban, badge: projects.length },
+  { id: "projects", label: "Projects", icon: FolderKanban, badge: 0 },
   { id: "services", label: "Services", icon: Briefcase, badge: 8 },
   { id: "team", label: "Team", icon: Users, badge: team.length },
   { id: "testimonials", label: "Testimonials", icon: MessageSquare, badge: testimonials.length },
@@ -61,6 +62,8 @@ function StatusPill({ s }: { s: string }) {
     Interview: "bg-violet-100 text-violet-700",
     Shortlisted: "bg-amber-100 text-amber-700",
     Live: "bg-emerald-100 text-emerald-700",
+    Published: "bg-emerald-100 text-emerald-700",
+    Hidden: "bg-amber-100 text-amber-700",
     Draft: "bg-slate-100 text-slate-600",
   };
   return <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold", map[s] || "bg-slate-100 text-slate-600")}><span className="h-1.5 w-1.5 rounded-full bg-current" />{s}</span>;
@@ -79,57 +82,235 @@ function RowActions({ onEdit, onDelete, onView }: { onEdit?: () => void; onDelet
 export default function Admin() {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [sidebar, setSidebar] = useState(false);
-  const [authed, setAuthed] = useState(false);
+  const [authToken, setAuthToken] = useState(() => sessionStorage.getItem("cc_admin_token") || "");
+  const authed = authToken !== "";
+  const [loginError, setLoginError] = useState("");
+  const [loginBusy, setLoginBusy] = useState(false);
+  const [dashboardRefresh, setDashboardRefresh] = useState(0);
   const [liveStats, setLiveStats] = useState({ projects: 0, messages: 0, quotes: 0, services: 0, team: 0, testimonials: 0, blogs: 0, jobs: 0, applications: 0 });
   const [recentMessages, setRecentMessages] = useState<any[]>([]);
   const [recentQuotes, setRecentQuotes] = useState<any[]>([]);
   const [dashboardLoading, setDashboardLoading] = useState(true);
-  const [projectRows, setProjectRows] = useState<any[]>(projects);
-  const [projectModal, setProjectModal] = useState<{ mode: "add" | "edit"; item?: any } | null>(null);
-  const [projectMessage, setProjectMessage] = useState("");
-  const [projectSearch, setProjectSearch] = useState("");
-  const [imageUploaded, setImageUploaded] = useState(false);
-  const [uploadedImageData, setUploadedImageData] = useState("");
+  const [projectList, setProjectList] = useState<any>({ items: [], total: 0, page: 1, pageSize: 10, totalPages: 1, counts: { total: 0, published: 0, draft: 0, hidden: 0, featured: 0 }, categories: [] });
+  const [projectQuery, setProjectQuery] = useState({ q: "", category: "", status: "", page: 1 });
+  const [projectsLoading, setProjectsLoading] = useState(false);
+  const [projectsError, setProjectsError] = useState("");
+  const [projectRefresh, setProjectRefresh] = useState(0);
+  const [projectModal, setProjectModal] = useState<{ mode: "add" | "edit" | "view"; item?: any } | null>(null);
+  const [projectNotice, setProjectNotice] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [projectFormError, setProjectFormError] = useState("");
+  const [projectSaving, setProjectSaving] = useState(false);
+  const [projectDetailLoading, setProjectDetailLoading] = useState(false);
+  const [thumbnail, setThumbnail] = useState("");
+  const [thumbnailChanged, setThumbnailChanged] = useState(false);
+  const [gallery, setGallery] = useState<string[]>([]);
+  const [galleryChanged, setGalleryChanged] = useState(false);
+  const [galleryUrl, setGalleryUrl] = useState("");
+
+  const signOut = (message = "") => {
+    sessionStorage.removeItem("cc_admin_token");
+    setAuthToken("");
+    setLoginError(message);
+    setProjectModal(null);
+    setProjectNotice(null);
+  };
+  const adminFetch = async (url: string, init: { method?: string; body?: string } = {}) => {
+    const response = await fetch(url, {
+      method: init.method || "GET",
+      body: init.body,
+      cache: "no-store",
+      headers: { Authorization: `Bearer ${authToken}`, ...(init.body ? { "Content-Type": "application/json" } : {}) },
+    });
+    if (response.status === 401) {
+      const message = "Your session has expired. Please sign in again.";
+      signOut(message);
+      throw new Error(message);
+    }
+    return response;
+  };
+  const readError = async (response: Response, fallback: string) => {
+    const data = await response.json().catch(() => ({}));
+    return data.error || fallback;
+  };
+  const slugify = (value: string) => value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 180);
+
+  const signIn = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    setLoginBusy(true);
+    setLoginError("");
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: String(form.get("email") || ""), password: String(form.get("password") || "") }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.token) throw new Error(data.error || "Sign-in failed. Check your email and password.");
+      sessionStorage.setItem("cc_admin_token", data.token);
+      setAuthToken(data.token);
+    } catch (error) {
+      const network = error instanceof TypeError;
+      setLoginError(network ? "Cannot reach the server. Make sure the API is running." : error instanceof Error ? error.message : "Sign-in failed.");
+    } finally {
+      setLoginBusy(false);
+    }
+  };
 
   useEffect(() => {
-    fetch("/api/projects").then((response) => response.ok ? response.json() : Promise.reject()).then((rows) => {
-      if (Array.isArray(rows) && rows.length > 0) setProjectRows(rows);
-    }).catch(() => setProjectMessage("Projects load nahi huay. Backend aur MySQL start karein."));
-  }, []);
+    if (!authed) return;
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      setProjectsLoading(true);
+      setProjectsError("");
+      try {
+        const params = new URLSearchParams({ page: String(projectQuery.page), pageSize: "10" });
+        if (projectQuery.q.trim()) params.set("q", projectQuery.q.trim());
+        if (projectQuery.category) params.set("category", projectQuery.category);
+        if (projectQuery.status) params.set("status", projectQuery.status);
+        const response = await adminFetch(`/api/projects?${params.toString()}`);
+        if (!response.ok) throw new Error(await readError(response, "Projects could not be loaded."));
+        const data = await response.json();
+        if (!cancelled) setProjectList(data);
+      } catch (error) {
+        if (!cancelled) setProjectsError(error instanceof Error ? error.message : "Projects could not be loaded.");
+      } finally {
+        if (!cancelled) setProjectsLoading(false);
+      }
+    }, 250);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authToken, projectQuery, projectRefresh]);
+
+  const resetProjectForm = () => {
+    setThumbnail("");
+    setThumbnailChanged(false);
+    setGallery([]);
+    setGalleryChanged(false);
+    setGalleryUrl("");
+    setProjectFormError("");
+  };
+  const closeProjectModal = () => {
+    setProjectModal(null);
+    resetProjectForm();
+  };
+  const openAddProject = () => {
+    setProjectNotice(null);
+    resetProjectForm();
+    setProjectModal({ mode: "add" });
+  };
+  const openProject = async (item: any, mode: "view" | "edit") => {
+    setProjectNotice(null);
+    setProjectDetailLoading(true);
+    try {
+      // Always load the selected record by its ID so the dialog shows the database values, not the list row.
+      const response = await adminFetch(`/api/projects/${item.id}`);
+      if (!response.ok) throw new Error(await readError(response, "Could not load this project."));
+      const fresh = await response.json();
+      resetProjectForm();
+      setThumbnail(fresh.image || "");
+      setGallery(Array.isArray(fresh.gallery) ? fresh.gallery : []);
+      setProjectModal({ mode, item: fresh });
+    } catch (error) {
+      setProjectNotice({ type: "error", text: error instanceof Error ? error.message : "Could not load this project." });
+    } finally {
+      setProjectDetailLoading(false);
+    }
+  };
+  const readImageFile = (file: File, onData: (data: string) => void) => {
+    if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
+      setProjectFormError("Upload a JPG, PNG, WEBP or GIF image.");
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      setProjectFormError("Image must be 3 MB or smaller.");
+      return;
+    }
+    setProjectFormError("");
+    const reader = new FileReader();
+    reader.onload = () => onData(String(reader.result));
+    reader.readAsDataURL(file);
+  };
+  const addGalleryUrl = () => {
+    const value = galleryUrl.trim();
+    if (!value) return;
+    if (gallery.length >= 8) { setProjectFormError("A project can have at most 8 gallery images."); return; }
+    try {
+      const url = new URL(value);
+      if (url.protocol !== "https:" && url.protocol !== "http:") throw new Error();
+    } catch {
+      setProjectFormError("Gallery image must be a valid http(s) URL.");
+      return;
+    }
+    setProjectFormError("");
+    setGallery((items) => [...items, value]);
+    setGalleryChanged(true);
+    setGalleryUrl("");
+  };
 
   const saveProject = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const raw = Object.fromEntries(new FormData(event.currentTarget).entries());
-    let image = String(raw.image || "");
-    const imageFile = raw.imageFile as File;
-    if (uploadedImageData) image = uploadedImageData;
-    else if (imageFile?.size) image = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(imageFile);
-    });
-    const data = { ...raw, image, name: raw.name || raw.title, description: raw.description || "", long_description: raw.long_description || raw.description || "", technologies: JSON.stringify(String(raw.technologies || "").split(",").map((v) => v.trim()).filter(Boolean)), results: JSON.stringify(String(raw.results || "").split(",").map((v) => v.trim()).filter(Boolean)), duration: raw.duration || "Not specified", published: 1 };
-    delete (data as any).imageFile;
-    delete (data as any).title;
+    const form = new FormData(event.currentTarget);
+    const text = (key: string) => String(form.get(key) || "").trim();
+    const editing = projectModal?.mode === "edit" && !!projectModal.item?.id;
+    const payload: Record<string, unknown> = {
+      name: text("name"),
+      slug: text("slug"),
+      category: text("category"),
+      client: text("client"),
+      year: text("year"),
+      duration: text("duration"),
+      description: text("description"),
+      long_description: text("long_description"),
+      technologies: text("technologies"),
+      results: text("results"),
+      live_url: text("live_url"),
+      github_url: text("github_url"),
+      display_order: text("display_order") || "0",
+      published: text("status") === "published",
+      visible: text("visibility") === "visible",
+      featured: form.get("featured") === "on",
+    };
+    if (!editing || thumbnailChanged) payload.image = thumbnail;
+    if (!editing || galleryChanged) payload.gallery = gallery;
+    setProjectSaving(true);
+    setProjectFormError("");
     try {
-      const editing = projectModal?.mode === "edit";
-      const response = await fetch(editing && projectModal?.item?.id ? `/api/projects/${projectModal.item.id}` : "/api/projects", {
-        method: editing && projectModal?.item?.id ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data),
+      const response = await adminFetch(editing ? `/api/projects/${projectModal?.item.id}` : "/api/projects", {
+        method: editing ? "PUT" : "POST",
+        body: JSON.stringify(payload),
       });
-      if (!response.ok) throw new Error("API unavailable");
+      if (!response.ok) {
+        setProjectFormError(await readError(response, "Project could not be saved."));
+        return;
+      }
       const saved = await response.json();
-      setProjectRows((rows) => editing && projectModal?.item?.id ? rows.map((row) => row.id === saved.id ? saved : row) : [saved, ...rows]);
-      setProjectModal(null); setProjectMessage("");
-    } catch { setProjectMessage("Backend/database connect nahi hai. MySQL aur API start karein."); }
+      closeProjectModal();
+      setProjectNotice({ type: "success", text: editing ? `"${saved.name}" was updated.` : `"${saved.name}" was added.` });
+      setProjectRefresh((n) => n + 1);
+      setDashboardRefresh((n) => n + 1);
+    } catch (error) {
+      setProjectFormError(error instanceof Error ? error.message : "Project could not be saved.");
+    } finally {
+      setProjectSaving(false);
+    }
   };
   const deleteProject = async (item: any) => {
-    if (!window.confirm(`Delete ${item.name || item.title}?`)) return;
+    if (!window.confirm(`Delete "${item.name}"? This permanently removes this project. This cannot be undone.`)) return;
+    setProjectNotice(null);
     try {
-      const response = await fetch(`/api/projects/${item.id}`, { method: "DELETE" });
-      if (!response.ok) throw new Error();
-      setProjectRows((rows) => rows.filter((row) => row.id !== item.id));
-    } catch { setProjectMessage("Project delete nahi hua. API/database check karein."); }
+      const response = await adminFetch(`/api/projects/${item.id}`, { method: "DELETE" });
+      if (!response.ok) throw new Error(await readError(response, "Project could not be deleted."));
+      setProjectNotice({ type: "success", text: `"${item.name}" was deleted.` });
+      if (projectList.items.length === 1 && projectQuery.page > 1) setProjectQuery((current) => ({ ...current, page: current.page - 1 }));
+      setProjectRefresh((n) => n + 1);
+      setDashboardRefresh((n) => n + 1);
+    } catch (error) {
+      setProjectNotice({ type: "error", text: error instanceof Error ? error.message : "Project could not be deleted." });
+    }
   };
 
-  useEffect(() => { fetch("/api/dashboard/recent").then((r) => r.ok ? r.json() : Promise.reject()).then((data) => { setRecentMessages(data.messages || []); setRecentQuotes(data.quotes || []); }).finally(() => setDashboardLoading(false)); fetch("/api/dashboard/summary").then((r) => r.ok ? r.json() : Promise.reject()).then((summary) => setLiveStats({ projects: summary.projects || 0, messages: summary.contact_messages || 0, quotes: summary.quote_requests || 0, services: summary.services || 0, team: summary.team_members || 0, testimonials: summary.testimonials || 0, blogs: summary.blog_posts || 0, jobs: summary.jobs || 0, applications: summary.job_applications || 0 })).catch(() => {}); }, []);
+  useEffect(() => { fetch("/api/dashboard/recent").then((r) => r.ok ? r.json() : Promise.reject()).then((data) => { setRecentMessages(data.messages || []); setRecentQuotes(data.quotes || []); }).catch(() => {}).finally(() => setDashboardLoading(false)); fetch("/api/dashboard/summary").then((r) => r.ok ? r.json() : Promise.reject()).then((summary) => setLiveStats({ projects: summary.projects || 0, messages: summary.contact_messages || 0, quotes: summary.quote_requests || 0, services: summary.services || 0, team: summary.team_members || 0, testimonials: summary.testimonials || 0, blogs: summary.blog_posts || 0, jobs: summary.jobs || 0, applications: summary.job_applications || 0 })).catch(() => {}); }, [dashboardRefresh]);
 
   const stats = useMemo(() => [
     { label: "Total Projects", value: liveStats.projects, icon: FolderKanban, delta: "+4 this month", color: "bg-brand" },
@@ -145,13 +326,14 @@ export default function Admin() {
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md rounded-3xl border border-line bg-white p-8 shadow-card sm:p-10">
           <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-ink"><LayoutDashboard className="h-6 w-6 text-white" /></span>
           <h1 className="font-display mt-5 text-center text-2xl font-extrabold text-charcoal">Admin Panel</h1>
-          <p className="mt-1.5 text-center text-sm text-muted">Sign in to manage content, projects & inquiries. <span className="font-semibold">(Demo — any credentials work)</span></p>
-          <form className="mt-7 space-y-4" onSubmit={(e) => { e.preventDefault(); setAuthed(true); }}>
-            <div><label className="mb-1.5 block text-[13px] font-semibold">Email</label><input type="email" required defaultValue="admin@codecraftsolutions.com" className="w-full rounded-xl border border-line px-4 py-3 text-sm" /></div>
-            <div><label className="mb-1.5 block text-[13px] font-semibold">Password</label><input type="password" required defaultValue="password" className="w-full rounded-xl border border-line px-4 py-3 text-sm" /></div>
-            <button type="submit" className="btn-primary w-full rounded-xl px-6 py-3.5 text-sm font-semibold">Sign In to Dashboard</button>
+          <p className="mt-1.5 text-center text-sm text-muted">Sign in with your administrator account to manage content, projects & inquiries.</p>
+          <form className="mt-7 space-y-4" onSubmit={signIn}>
+            <div><label className="mb-1.5 block text-[13px] font-semibold">Email</label><input name="email" type="email" required autoComplete="username" className="w-full rounded-xl border border-line px-4 py-3 text-sm" /></div>
+            <div><label className="mb-1.5 block text-[13px] font-semibold">Password</label><input name="password" type="password" required autoComplete="current-password" className="w-full rounded-xl border border-line px-4 py-3 text-sm" /></div>
+            {loginError && <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">{loginError}</p>}
+            <button type="submit" disabled={loginBusy} className="btn-primary w-full rounded-xl px-6 py-3.5 text-sm font-semibold disabled:opacity-60">{loginBusy ? "Signing in…" : "Sign In to Dashboard"}</button>
           </form>
-          <p className="mt-5 flex items-center justify-center gap-1.5 text-[12px] text-muted"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Secured with 2FA & audit logs in production</p>
+          <p className="mt-5 flex items-center justify-center gap-1.5 text-[12px] text-muted"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Protected admin access</p>
         </motion.div>
       </div>
     );
@@ -185,7 +367,7 @@ export default function Admin() {
           <Link to="/" className="hidden h-10 items-center gap-1.5 rounded-xl border border-line px-4 text-[13px] font-semibold text-charcoal transition hover:border-brand hover:text-brand sm:flex">
             ← Website
           </Link>
-          <button onClick={() => setAuthed(false)} className="hidden h-10 items-center gap-1.5 rounded-xl bg-ink px-4 text-[13px] font-semibold text-white transition hover:bg-red-600 sm:flex">
+          <button onClick={() => signOut()} className="hidden h-10 items-center gap-1.5 rounded-xl bg-ink px-4 text-[13px] font-semibold text-white transition hover:bg-red-600 sm:flex">
             <LogOut className="h-4 w-4" /> Logout
           </button>
         </div>
@@ -213,8 +395,8 @@ export default function Admin() {
               >
                 <t.icon className="h-[18px] w-[18px]" />
                 <span className="flex-1 text-left">{t.label}</span>
-                {t.badge != null && (
-                  <span className={cn("rounded-full px-2 py-0.5 text-[10.5px] font-bold", tab === t.id ? "bg-white/15 text-white" : "bg-paper-2 text-charcoal")}>{t.badge}</span>
+                {(t.id === "projects" ? projectList.counts.total : t.badge) != null && (
+                  <span className={cn("rounded-full px-2 py-0.5 text-[10.5px] font-bold", tab === t.id ? "bg-white/15 text-white" : "bg-paper-2 text-charcoal")}>{t.id === "projects" ? projectList.counts.total : t.badge}</span>
                 )}
               </button>
             ))}
@@ -240,7 +422,7 @@ export default function Admin() {
                     </div>
                     <div className="flex gap-2">
                       <button className="flex items-center gap-1.5 rounded-xl border border-line bg-white px-4 py-2.5 text-[13px] font-semibold"><Filter className="h-4 w-4" /> Last 30 days</button>
-                      <button onClick={() => { setTab("projects"); setProjectModal({ mode: "add" }); }} className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> New Project</button>
+                      <button onClick={() => { setTab("projects"); openAddProject(); }} className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> New Project</button>
                     </div>
                   </div>
 
@@ -334,17 +516,75 @@ export default function Admin() {
 
               {tab === "projects" && (
                 <>
-                <TableCard title="Projects" sub="Manage portfolio case studies shown on the website." action="Add Project" onAction={() => setProjectModal({ mode: "add" })} searchValue={projectSearch} onSearch={setProjectSearch}>
-                  {projectRows.filter((p) => `${p.name || ""} ${p.title || ""} ${p.category || ""} ${p.client || ""}`.toLowerCase().includes(projectSearch.toLowerCase())).map((p) => (
-                    <div key={p.slug} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
-                      <img src={p.image} alt={p.name} className="hidden h-12 w-16 rounded-lg object-cover sm:block" />
-                      <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-bold">{p.name}</span><span className="block text-[12px] text-muted">{p.category} · {p.client} · {p.year}</span></span>
-                      <span className="hidden md:block"><StatusPill s="Live" /></span>
-                      <RowActions onEdit={() => setProjectModal({ mode: "edit", item: p })} onDelete={() => deleteProject(p)} onView={() => setProjectModal({ mode: "edit", item: p })} />
+                <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  {[["Total projects", projectList.counts.total], ["Published", projectList.counts.published], ["Drafts", projectList.counts.draft], ["Featured", projectList.counts.featured]].map(([label, value]) => (
+                    <div key={String(label)} className="rounded-2xl border border-line bg-white p-4 shadow-card">
+                      <p className="font-display text-xl font-extrabold text-charcoal">{value}</p>
+                      <p className="text-[12.5px] font-semibold text-muted">{label}</p>
+                    </div>
+                  ))}
+                </div>
+                {projectNotice && (
+                  <div role="status" className={cn("mb-4 rounded-xl border px-4 py-3 text-sm font-semibold", projectNotice.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-600")}>{projectNotice.text}</div>
+                )}
+                {projectDetailLoading && <p className="mb-3 text-sm font-medium text-muted">Loading project details…</p>}
+                <TableCard
+                  title="Projects"
+                  sub="Manage portfolio case studies shown on the website."
+                  action="Add Project"
+                  onAction={openAddProject}
+                  searchValue={projectQuery.q}
+                  onSearch={(q) => setProjectQuery((current) => ({ ...current, q, page: 1 }))}
+                  filters={
+                    <>
+                      <select value={projectQuery.category} onChange={(event) => setProjectQuery((current) => ({ ...current, category: event.target.value, page: 1 }))} className="rounded-xl border border-line px-3 py-2.5 text-[13px]" aria-label="Filter by category">
+                        <option value="">All categories</option>
+                        {projectList.categories.map((category: string) => <option key={category} value={category}>{category}</option>)}
+                      </select>
+                      <select value={projectQuery.status} onChange={(event) => setProjectQuery((current) => ({ ...current, status: event.target.value, page: 1 }))} className="rounded-xl border border-line px-3 py-2.5 text-[13px]" aria-label="Filter by status">
+                        <option value="">All status</option>
+                        <option value="published">Published</option>
+                        <option value="draft">Draft</option>
+                        <option value="hidden">Hidden</option>
+                      </select>
+                    </>
+                  }
+                  footer={
+                    <>
+                      <span>{projectList.total === 0 ? "No matching projects" : `Page ${projectList.page} of ${projectList.totalPages} · ${projectList.total} total`}</span>
+                      <span className="flex items-center gap-2">
+                        <button disabled={projectQuery.page <= 1} onClick={() => setProjectQuery((current) => ({ ...current, page: current.page - 1 }))} className="flex h-8 items-center gap-1 rounded-lg border border-line bg-white px-3 font-semibold text-charcoal disabled:opacity-40"><ChevronLeft className="h-3.5 w-3.5" /> Prev</button>
+                        <button disabled={projectQuery.page >= projectList.totalPages} onClick={() => setProjectQuery((current) => ({ ...current, page: current.page + 1 }))} className="flex h-8 items-center gap-1 rounded-lg border border-line bg-white px-3 font-semibold text-charcoal disabled:opacity-40">Next <ChevronRight className="h-3.5 w-3.5" /></button>
+                      </span>
+                    </>
+                  }
+                >
+                  {projectsLoading && <p className="p-5 text-sm text-muted">Loading projects…</p>}
+                  {!projectsLoading && projectsError && (
+                    <div className="p-5">
+                      <p className="text-sm font-semibold text-red-600">{projectsError}</p>
+                      <button onClick={() => setProjectRefresh((n) => n + 1)} className="mt-3 rounded-xl border border-line px-4 py-2 text-sm font-semibold">Retry</button>
+                    </div>
+                  )}
+                  {!projectsLoading && !projectsError && projectList.items.length === 0 && (
+                    <p className="p-5 text-sm text-muted">{projectQuery.q || projectQuery.category || projectQuery.status ? "No projects match these filters." : "No projects yet. Click Add Project to create the first one."}</p>
+                  )}
+                  {!projectsError && projectList.items.map((p: any) => (
+                    <div key={p.id} className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0">
+                      {p.image ? <img src={p.image} alt={p.name} className="hidden h-12 w-16 rounded-lg object-cover sm:block" /> : <span className="hidden h-12 w-16 rounded-lg bg-paper sm:block" />}
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[14px] font-bold">{p.name}</span>
+                        <span className="block truncate text-[12px] text-muted">{p.category} · {p.client} · {p.year}</span>
+                      </span>
+                      <span className="hidden flex-wrap items-center justify-end gap-1.5 md:flex">
+                        {p.featured && <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-700"><Star className="h-3 w-3" /> Featured</span>}
+                        <StatusPill s={p.status} />
+                        {!p.visible && <StatusPill s="Hidden" />}
+                      </span>
+                      <RowActions onView={() => openProject(p, "view")} onEdit={() => openProject(p, "edit")} onDelete={() => deleteProject(p)} />
                     </div>
                   ))}
                 </TableCard>
-                {projectMessage && <p className="p-4 text-sm text-red-600">{projectMessage}</p>}
                 </>
               )}
 
@@ -474,45 +714,153 @@ export default function Admin() {
           </AnimatePresence>
         </main>
       </div>
-      {projectModal && <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4" role="dialog" aria-modal="true">
-        <form onSubmit={saveProject} className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
-          <div className="flex items-center justify-between"><h2 className="font-display text-xl font-extrabold">{projectModal.mode === "add" ? "Add Project" : "Edit Project"}</h2><button type="button" onClick={() => setProjectModal(null)} aria-label="Close project dialog" className="text-2xl text-muted">×</button></div>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            {[["name","Project name"],["slug","Slug"],["category","Category"],["client","Client"],["year","Year"],["duration","Duration"],["technologies","Technologies (comma separated)"],["results","Results (comma separated)"],["description","Short description"]].map(([name,label]) => <label key={name} className="text-sm font-semibold">{label}<input name={name} required={!["image","technologies","results","duration"].includes(name)} defaultValue={projectModal.item?.[name] || (name === "technologies" ? (Array.isArray(projectModal.item?.technologies) ? projectModal.item.technologies.join(", ") : "") : (name === "results" ? (Array.isArray(projectModal.item?.results) ? projectModal.item.results.join(", ") : "") : ""))} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>)}
-            <label className="text-sm font-semibold sm:col-span-2">Detailed description<textarea name="long_description" rows={3} defaultValue={projectModal.item?.long_description || projectModal.item?.description || ""} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>
-          </div>
-          <div className="mt-3 rounded-xl border border-line p-4">
-            <p className="text-sm font-semibold">Project Image</p>
-            <label className="mt-3 flex items-center gap-2 text-sm font-medium"><input type="radio" name="imageSource" value="url" defaultChecked /> Image URL</label>
-            <input name="image" defaultValue={projectModal.item?.image || ""} placeholder="https://example.com/image.jpg" className="mt-2 w-full rounded-xl border border-line px-3 py-2.5 text-sm font-normal" />
-            <div className="my-3 text-center text-xs font-semibold text-muted">OR</div>
-            <label className="flex items-center gap-2 text-sm font-medium"><input type="radio" name="imageSource" value="file" /> Upload Image</label>
-            <input id="project-image-file" name="imageFile" type="file" accept="image/*" className="mt-2 w-full rounded-xl border border-line px-3 py-2.5 text-sm font-normal" />
-            <div className="mt-3 flex gap-2"><button type="button" onClick={() => { const file = (document.getElementById("project-image-file") as HTMLInputElement)?.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { setUploadedImageData(String(reader.result)); setImageUploaded(true); }; reader.readAsDataURL(file); }} className="rounded-xl border border-line px-4 py-2 text-sm font-semibold hover:border-brand hover:text-brand">Upload</button><button type="submit" className="btn-primary rounded-xl px-4 py-2 text-sm font-semibold">Save Image</button></div>
-            {imageUploaded && <p className="mt-2 text-xs font-semibold text-emerald-600">Image ready — Save Image par click karein.</p>}
-          </div>
-          <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setProjectModal(null)} className="rounded-xl border border-line px-4 py-2.5 font-semibold">Cancel</button><button className="btn-primary rounded-xl px-5 py-2.5 font-semibold">Save Project</button></div>
-        </form>
-      </div>}
+      {projectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4" role="dialog" aria-modal="true">
+          {projectModal.mode === "view" ? (
+            <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="font-display text-xl font-extrabold">{projectModal.item.name}</h2>
+                  <p className="text-[12.5px] text-muted">/{projectModal.item.slug}</p>
+                </div>
+                <button type="button" onClick={closeProjectModal} aria-label="Close project dialog" className="text-2xl text-muted">×</button>
+              </div>
+              {projectModal.item.image && <img src={projectModal.item.image} alt={projectModal.item.name} className="mt-4 h-56 w-full rounded-xl object-cover" />}
+              <div className="mt-4 flex flex-wrap gap-2">
+                <StatusPill s={projectModal.item.status} />
+                {!projectModal.item.visible && <StatusPill s="Hidden" />}
+                {projectModal.item.featured && <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-700"><Star className="h-3 w-3" /> Featured</span>}
+                <span className="rounded-full bg-paper px-2.5 py-1 text-[11px] font-bold text-charcoal">{projectModal.item.category}</span>
+              </div>
+              <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-3">
+                {[["Client", projectModal.item.client], ["Year", projectModal.item.year], ["Duration", projectModal.item.duration], ["Display order", projectModal.item.display_order], ["Last updated", projectModal.item.updated_at ? new Date(projectModal.item.updated_at).toLocaleString() : "—"]].map(([label, value]) => (
+                  <div key={String(label)} className="rounded-xl bg-paper p-3">
+                    <dt className="text-[11px] font-bold uppercase tracking-wider text-muted">{label}</dt>
+                    <dd className="mt-1 font-semibold text-charcoal">{String(value ?? "—")}</dd>
+                  </div>
+                ))}
+              </dl>
+              <h3 className="mt-5 text-sm font-bold">Short description</h3>
+              <p className="mt-1 text-sm leading-relaxed text-muted">{projectModal.item.description}</p>
+              <h3 className="mt-5 text-sm font-bold">Full description</h3>
+              <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-muted">{projectModal.item.long_description || "—"}</p>
+              <h3 className="mt-5 text-sm font-bold">Technologies</h3>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {projectModal.item.technologies.length ? projectModal.item.technologies.map((t: string) => <span key={t} className="rounded-md bg-ink px-2.5 py-1 text-[12px] font-semibold text-white">{t}</span>) : <span className="text-sm text-muted">—</span>}
+              </div>
+              <h3 className="mt-5 text-sm font-bold">Results</h3>
+              <div className="mt-2 grid gap-3 sm:grid-cols-3">
+                {projectModal.item.results.length ? projectModal.item.results.map((r: any) => (
+                  <div key={`${r.value}-${r.label}`} className="rounded-xl border border-brand/20 bg-brand-light p-3 text-center">
+                    <p className="font-display text-lg font-extrabold text-brand">{r.value}</p>
+                    <p className="text-[11.5px] font-medium text-charcoal/70">{r.label}</p>
+                  </div>
+                )) : <span className="text-sm text-muted">—</span>}
+              </div>
+              <h3 className="mt-5 text-sm font-bold">Links</h3>
+              <div className="mt-2 flex flex-wrap gap-4 text-sm font-semibold text-brand">
+                {projectModal.item.live_url ? <a href={projectModal.item.live_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:underline">Live website <ExternalLink className="h-3.5 w-3.5" /></a> : <span className="text-muted">No live URL</span>}
+                {projectModal.item.github_url ? <a href={projectModal.item.github_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:underline">GitHub repository <ExternalLink className="h-3.5 w-3.5" /></a> : <span className="text-muted">No GitHub URL</span>}
+              </div>
+              {gallery.length > 0 && (
+                <>
+                  <h3 className="mt-5 text-sm font-bold">Gallery</h3>
+                  <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                    {gallery.map((src, index) => <img key={index} src={src} alt={`${projectModal.item.name} ${index + 1}`} className="h-20 w-full rounded-lg object-cover" />)}
+                  </div>
+                </>
+              )}
+              <div className="mt-6 flex justify-end gap-2">
+                <button type="button" onClick={closeProjectModal} className="rounded-xl border border-line px-4 py-2.5 font-semibold">Close</button>
+                <button type="button" onClick={() => { setProjectModal({ mode: "edit", item: projectModal.item }); setThumbnail(projectModal.item.image || ""); setGallery(Array.isArray(projectModal.item.gallery) ? projectModal.item.gallery : []); }} className="btn-primary rounded-xl px-5 py-2.5 font-semibold">Edit Project</button>
+              </div>
+            </div>
+          ) : (
+            <form key={`${projectModal.mode}-${projectModal.item?.id ?? "new"}`} onSubmit={saveProject} className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+              <div className="flex items-center justify-between">
+                <h2 className="font-display text-xl font-extrabold">{projectModal.mode === "add" ? "Add Project" : "Edit Project"}</h2>
+                <button type="button" onClick={closeProjectModal} aria-label="Close project dialog" className="text-2xl text-muted">×</button>
+              </div>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <label className="text-sm font-semibold">Project name *<input name="name" required maxLength={255} defaultValue={projectModal.item?.name || ""} onChange={(event) => { const slug = event.currentTarget.form?.elements.namedItem("slug") as HTMLInputElement | null; if (slug && projectModal.mode === "add" && (slug.dataset.auto === "1" || !slug.value)) { slug.value = slugify(event.currentTarget.value); slug.dataset.auto = "1"; } }} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>
+                <label className="text-sm font-semibold">Slug (unique URL id) *<input name="slug" required maxLength={180} pattern="[a-z0-9]+(-[a-z0-9]+)*" title="Lowercase letters, numbers and single hyphens" onInput={(event) => { event.currentTarget.dataset.auto = "0"; }} defaultValue={projectModal.item?.slug || ""} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>
+                <label className="text-sm font-semibold">Category *<input name="category" required maxLength={80} list="project-categories" defaultValue={projectModal.item?.category || ""} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /><datalist id="project-categories">{projectList.categories.map((c: string) => <option key={c} value={c} />)}</datalist></label>
+                <label className="text-sm font-semibold">Client *<input name="client" required maxLength={180} defaultValue={projectModal.item?.client || ""} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>
+                <label className="text-sm font-semibold">Year *<input name="year" required inputMode="numeric" pattern="\d{4}" title="Four digit year, e.g. 2026" defaultValue={projectModal.item?.year || ""} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>
+                <label className="text-sm font-semibold">Duration *<input name="duration" required maxLength={80} placeholder="e.g. 12 weeks" defaultValue={projectModal.item?.duration || ""} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>
+                <label className="text-sm font-semibold sm:col-span-2">Short description *<textarea name="description" required maxLength={500} rows={2} defaultValue={projectModal.item?.description || ""} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>
+                <label className="text-sm font-semibold sm:col-span-2">Full description<textarea name="long_description" rows={4} maxLength={20000} defaultValue={projectModal.item?.long_description || ""} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>
+                <label className="text-sm font-semibold sm:col-span-2">Technologies (comma separated)<input name="technologies" placeholder="React, TypeScript, PHP, MySQL" defaultValue={(projectModal.item?.technologies || []).join(", ")} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>
+                <label className="text-sm font-semibold sm:col-span-2">Results (one per line, "value | label")<textarea name="results" rows={3} placeholder={"3.2x | Faster onboarding\n99.98% | Uptime"} defaultValue={(projectModal.item?.results || []).map((r: any) => `${r.value} | ${r.label}`).join("\n")} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>
+                <label className="text-sm font-semibold">Live website URL<input name="live_url" type="url" maxLength={500} placeholder="https://" defaultValue={projectModal.item?.live_url || ""} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>
+                <label className="text-sm font-semibold">GitHub repository URL<input name="github_url" type="url" maxLength={500} placeholder="https://github.com/..." defaultValue={projectModal.item?.github_url || ""} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /></label>
+                <label className="text-sm font-semibold">Status<select name="status" defaultValue={projectModal.item ? (projectModal.item.published ? "published" : "draft") : "draft"} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal"><option value="published">Published</option><option value="draft">Draft (private)</option></select></label>
+                <label className="text-sm font-semibold">Visibility<select name="visibility" defaultValue={projectModal.item ? (projectModal.item.visible ? "visible" : "hidden") : "visible"} className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal"><option value="visible">Visible on website</option><option value="hidden">Hidden from website</option></select></label>
+                <label className="text-sm font-semibold">Display order<input name="display_order" type="number" min={0} max={100000} step={1} defaultValue={projectModal.item?.display_order ?? ""} placeholder="Auto" className="mt-1 w-full rounded-xl border border-line px-3 py-2.5 font-normal" /><span className="mt-1 block text-[11.5px] font-normal text-muted">Lower numbers appear first.</span></label>
+                <label className="flex items-center gap-2 self-end text-sm font-semibold"><input name="featured" type="checkbox" defaultChecked={!!projectModal.item?.featured} className="h-4 w-4" /> Featured project</label>
+              </div>
+
+              <div className="mt-4 rounded-xl border border-line p-4">
+                <p className="text-sm font-semibold">Thumbnail image *</p>
+                {thumbnail && <img src={thumbnail} alt="Thumbnail preview" className="mt-3 h-36 w-full rounded-lg object-cover" />}
+                <input type="url" value={thumbnail.startsWith("data:") ? "" : thumbnail} onChange={(event) => { setThumbnail(event.target.value); setThumbnailChanged(true); }} placeholder={thumbnail.startsWith("data:") ? "Uploaded image in use (paste a URL to replace)" : "https://example.com/image.jpg"} className="mt-3 w-full rounded-xl border border-line px-3 py-2.5 text-sm font-normal" />
+                <p className="my-2 text-center text-xs font-semibold text-muted">OR</p>
+                <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => { const file = event.target.files?.[0]; if (file) readImageFile(file, (data) => { setThumbnail(data); setThumbnailChanged(true); }); }} className="w-full rounded-xl border border-line px-3 py-2.5 text-sm font-normal" />
+                <p className="mt-2 text-[11.5px] text-muted">JPG, PNG, WEBP or GIF, up to 3 MB. {projectModal.mode === "edit" && !thumbnailChanged ? "Current image will be kept." : ""}</p>
+              </div>
+
+              <div className="mt-3 rounded-xl border border-line p-4">
+                <p className="text-sm font-semibold">Gallery (optional, up to 8)</p>
+                {gallery.length > 0 && (
+                  <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                    {gallery.map((src, index) => (
+                      <div key={index} className="relative">
+                        <img src={src} alt={`Gallery ${index + 1}`} className="h-20 w-full rounded-lg object-cover" />
+                        <button type="button" aria-label={`Remove gallery image ${index + 1}`} onClick={() => { setGallery((items) => items.filter((_, i) => i !== index)); setGalleryChanged(true); }} className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-md bg-ink/80 text-white"><X className="h-3.5 w-3.5" /></button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="mt-3 flex gap-2">
+                  <input type="url" value={galleryUrl} onChange={(event) => setGalleryUrl(event.target.value)} placeholder="Add image URL" className="min-w-0 flex-1 rounded-xl border border-line px-3 py-2.5 text-sm font-normal" />
+                  <button type="button" onClick={addGalleryUrl} className="flex items-center gap-1 rounded-xl border border-line px-4 py-2.5 text-sm font-semibold"><Plus className="h-4 w-4" /> Add</button>
+                </div>
+                <input type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => { Array.from(event.target.files || []).forEach((file) => readImageFile(file, (data) => { setGallery((items) => (items.length >= 8 ? items : [...items, data])); setGalleryChanged(true); })); }} className="mt-3 w-full rounded-xl border border-line px-3 py-2.5 text-sm font-normal" />
+              </div>
+
+              {projectFormError && <p role="alert" className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">{projectFormError}</p>}
+              <div className="mt-5 flex justify-end gap-2">
+                <button type="button" onClick={closeProjectModal} className="rounded-xl border border-line px-4 py-2.5 font-semibold">Cancel</button>
+                <button type="submit" disabled={projectSaving} className="btn-primary rounded-xl px-5 py-2.5 font-semibold disabled:opacity-60">{projectSaving ? "Saving…" : "Save Project"}</button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-function TableCard({ title, sub, action, onAction, searchValue, onSearch, children }: { title: string; sub: string; action: string; onAction?: () => void; searchValue?: string; onSearch?: (value: string) => void; children: React.ReactNode }) {
+function TableCard({ title, sub, action, onAction, searchValue, onSearch, filters, footer, children }: { title: string; sub: string; action: string; onAction?: () => void; searchValue?: string; onSearch?: (value: string) => void; filters?: React.ReactNode; footer?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-card">
       <div className="flex flex-wrap items-center justify-between gap-3 p-5">
         <div><h2 className="font-display text-lg font-extrabold">{title}</h2><p className="text-[13px] text-muted">{sub}</p></div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {filters}
           {onSearch ? <label className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" /><input value={searchValue || ""} onChange={(event) => onSearch(event.target.value)} placeholder="Search..." className="w-36 rounded-xl border border-line py-2.5 pl-9 pr-3 text-[13px]" /></label> : <button className="flex items-center gap-1.5 rounded-xl border border-line px-4 py-2.5 text-[13px] font-semibold"><Search className="h-4 w-4" /> Search</button>}
           <button onClick={onAction} className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold"><Plus className="h-4 w-4" /> {action}</button>
         </div>
       </div>
       <div className="border-t border-line">{children}</div>
-      <div className="flex items-center justify-between border-t border-line bg-paper/60 px-5 py-3 text-[12px] text-muted">
-        <span>Showing all items</span>
-        <span className="flex items-center gap-1.5"><Clock3 className="h-3.5 w-3.5" /> Last synced just now</span>
-      </div>
+      {footer ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line bg-paper/60 px-5 py-3 text-[12px] text-muted">{footer}</div>
+      ) : (
+        <div className="flex items-center justify-between border-t border-line bg-paper/60 px-5 py-3 text-[12px] text-muted">
+          <span>Showing all items</span>
+          <span className="flex items-center gap-1.5"><Clock3 className="h-3.5 w-3.5" /> Last synced just now</span>
+        </div>
+      )}
     </div>
   );
 }
