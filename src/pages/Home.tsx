@@ -5,7 +5,9 @@ import {
   ArrowRight, ArrowUpRight, Check, ChevronLeft, ChevronRight, Cloud, Code2,
   FolderKanban, Play, Quote, ShieldCheck, Star, Terminal, Zap, Globe, Smartphone, Database, Wrench, Layout, Server,
 } from "lucide-react";
-import { services, projects, techCategories, team, testimonials, blogPosts, processSteps, whyChooseUs, IMAGES } from "../data/content";
+import { services, techCategories, team, testimonials, blogPosts, processSteps, whyChooseUs, IMAGES } from "../data/content";
+import type { Project } from "../data/content";
+import { useProjects } from "../data/useProjects";
 import { Reveal, SectionHeading, Counter, DynIcon, Stars, CTASection, useQuote } from "../components/layout";
 import { cn } from "../utils/cn";
 
@@ -366,8 +368,7 @@ function TechPreview() {
 }
 
 /* ================= FEATURED WORK ================= */
-const filters = ["All", "Web", "Mobile", "UI/UX", "Software", "E-Commerce"];
-export function ProjectCard({ p, large }: { p: (typeof projects)[number]; large?: boolean }) {
+export function ProjectCard({ p, large }: { p: Project; large?: boolean }) {
   return (
     <div className="card-lift group overflow-hidden rounded-2xl border border-line bg-white shadow-card">
       <div className={cn("relative overflow-hidden", large ? "h-60 sm:h-72" : "h-52")}>
@@ -401,6 +402,8 @@ export function ProjectCard({ p, large }: { p: (typeof projects)[number]; large?
 
 function FeaturedWork() {
   const [filter, setFilter] = useState("All");
+  const { projects, loading, error, reload } = useProjects();
+  const categories = ["All", ...Array.from(new Set(projects.map((p) => p.category))).sort()];
   const list = (filter === "All" ? projects : projects.filter((p) => p.category === filter)).slice(0, 3);
   return (
     <section className="bg-paper py-20 sm:py-24">
@@ -408,7 +411,7 @@ function FeaturedWork() {
         <SectionHeading eyebrow="Portfolio" title="Featured Work" sub="A selection of solutions we've built for modern businesses." />
         <Reveal delay={0.1}>
           <div className="mt-9 flex flex-wrap justify-center gap-2">
-            {filters.map((f) => (
+            {categories.map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
@@ -422,13 +425,23 @@ function FeaturedWork() {
             ))}
           </div>
         </Reveal>
-        <motion.div layout className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {list.map((p) => (
-            <motion.div key={p.slug} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
-              <ProjectCard p={p} />
-            </motion.div>
-          ))}
-        </motion.div>
+        {loading && projects.length === 0 && <p className="mt-10 text-center text-sm font-medium text-muted">Loading projects…</p>}
+        {!loading && error && (
+          <div className="mt-10 rounded-2xl border border-line bg-white p-8 text-center">
+            <p className="text-sm font-semibold text-charcoal">{error}</p>
+            <button onClick={reload} className="mt-4 rounded-xl border border-line px-5 py-2.5 text-sm font-semibold text-charcoal transition hover:border-brand hover:text-brand">Try again</button>
+          </div>
+        )}
+        {!loading && !error && list.length === 0 && <p className="mt-10 text-center text-sm font-medium text-muted">No projects published yet.</p>}
+        {list.length > 0 && (
+          <motion.div layout className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {list.map((p) => (
+              <motion.div key={p.slug} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
+                <ProjectCard p={p} />
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
         <Reveal className="mt-10 text-center">
           <Link to="/portfolio" className="btn-primary inline-flex items-center gap-2 rounded-xl px-8 py-3.5 text-sm font-semibold">
             View Full Portfolio <ArrowRight className="h-4 w-4" />
