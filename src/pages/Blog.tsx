@@ -80,7 +80,7 @@ export default function BlogPage() {
                   key={c}
                   onClick={() => setCat(c)}
                   className={cn(
-                    "shrink-0 rounded-full border px-5 py-2 text-[13px] font-semibold transition",
+                    "shrink-0 rounded-full border px-5 py-2 text-[13px] font-semibold",
                     cat === c ? "border-brand bg-brand text-white shadow-blue" : "border-line bg-paper text-charcoal/70 hover:border-charcoal"
                   )}
                 >

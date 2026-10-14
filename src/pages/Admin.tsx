@@ -389,7 +389,7 @@ export default function Admin() {
                 key={t.id}
                 onClick={() => { setTab(t.id); setSidebar(false); }}
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-[13.5px] font-semibold transition",
+                  "flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-[13.5px] font-semibold",
                   tab === t.id ? "bg-ink text-white shadow-card" : "text-charcoal/70 hover:bg-paper"
                 )}
               >

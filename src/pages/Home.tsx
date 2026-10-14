@@ -321,7 +321,7 @@ function TechPreview() {
                   key={c.title}
                   onClick={() => setActive(i)}
                   className={cn(
-                    "flex items-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-semibold transition",
+                    "flex items-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-semibold",
                     active === i ? "border-brand bg-brand text-white shadow-blue" : "border-line bg-white text-charcoal hover:border-brand/50"
                   )}
                 >
@@ -416,7 +416,7 @@ function FeaturedWork() {
                 key={f}
                 onClick={() => setFilter(f)}
                 className={cn(
-                  "rounded-full border px-5 py-2 text-[13px] font-semibold transition",
+                  "rounded-full border px-5 py-2 text-[13px] font-semibold",
                   filter === f ? "border-ink bg-ink text-white" : "border-line bg-white text-charcoal/70 hover:border-charcoal"
                 )}
               >
@@ -595,7 +595,7 @@ function Testimonials() {
             <div className="mt-8 flex items-center justify-between border-t border-line pt-6">
               <div className="flex gap-2">
                 {testimonials.map((_, i) => (
-                  <button key={i} onClick={() => setIdx(i)} aria-label={`Go to testimonial ${i + 1}`} className={cn("h-2 rounded-full transition-all", i === idx ? "w-8 bg-brand" : "w-2 bg-paper-2 hover:bg-muted-2")} />
+                  <button key={i} onClick={() => setIdx(i)} aria-label={`Go to testimonial ${i + 1}`} className={cn("h-2 rounded-full", i === idx ? "w-8 bg-brand" : "w-2 bg-paper-2 hover:bg-muted-2")} />
                 ))}
               </div>
               <div className="flex gap-2">

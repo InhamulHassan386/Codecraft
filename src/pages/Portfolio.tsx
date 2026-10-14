@@ -45,7 +45,7 @@ export default function Portfolio() {
                     key={f}
                     onClick={() => setFilter(f)}
                     className={cn(
-                      "rounded-full border px-5 py-2.5 text-[13px] font-semibold transition",
+                      "rounded-full border px-5 py-2.5 text-[13px] font-semibold",
                       filter === f ? "border-ink bg-ink text-white" : "border-line bg-white text-charcoal/70 hover:border-charcoal"
                     )}
                   >

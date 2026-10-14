@@ -200,7 +200,7 @@ export function Navbar() {
                 key={l.path}
                 to={l.path}
                 className={({ isActive }) => cn(
-                  "link-underline rounded-md px-2.5 py-2 text-[13.5px] font-semibold transition-colors",
+                  "link-underline rounded-md px-2.5 py-2 text-[13.5px] font-semibold",
                   solid ? "text-charcoal/80 hover:text-charcoal" : "text-white/80 hover:text-white",
                   isActive && (solid ? "!text-brand" : "!text-white active")
                 )}

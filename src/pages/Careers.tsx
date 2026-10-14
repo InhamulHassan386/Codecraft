@@ -69,7 +69,7 @@ export default function Careers() {
           <Reveal delay={0.1}>
             <div className="mt-8 flex flex-wrap justify-center gap-2">
               {depts.map((d) => (
-                <button key={d} onClick={() => setDept(d)} className={cn("rounded-full border px-5 py-2 text-[13px] font-semibold transition", dept === d ? "border-ink bg-ink text-white" : "border-line bg-white text-charcoal/70 hover:border-charcoal")}>
+                <button key={d} onClick={() => setDept(d)} className={cn("rounded-full border px-5 py-2 text-[13px] font-semibold", dept === d ? "border-ink bg-ink text-white" : "border-line bg-white text-charcoal/70 hover:border-charcoal")}>
                   {d}
                 </button>
               ))}
