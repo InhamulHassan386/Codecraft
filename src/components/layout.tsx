@@ -121,7 +121,7 @@ export function Counter({ value, suffix = "" }: { value: number; suffix?: string
 export function Logo({ dark = true }: { dark?: boolean }) {
   return (
     <Link to="/" className="group flex items-center gap-2.5">
-      <span className="relative flex h-9 w-9 items-center justify-center rounded-[10px] bg-brand shadow-blue transition-transform duration-300 group-hover:scale-105 group-hover:rotate-3">
+      <span className="relative flex h-9 w-9 items-center justify-center rounded-[10px] bg-brand shadow-blue">
         <Code2 className="h-[18px] w-[18px] text-white" strokeWidth={2.4} />
         <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-white ring-2 ring-ink" />
       </span>
@@ -216,7 +216,7 @@ export function Navbar() {
               className="btn-primary group flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold"
             >
               Get a Quote
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              <ArrowRight className="h-4 w-4" />
             </button>
           </div>
 
@@ -302,7 +302,7 @@ export function Footer() {
             <p className="mt-2 text-slate-400">Get a free consultation and project estimate within 24 hours.</p>
           </div>
           <button onClick={open} className="btn-primary group flex shrink-0 items-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold">
-            Start Your Project <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            Start Your Project <ArrowRight className="h-4 w-4" />
           </button>
         </div>
 
@@ -320,7 +320,7 @@ export function Footer() {
                 { icon: InstagramIcon, label: "Instagram" },
                 { icon: XSocialIcon, label: "X" },
               ].map((s) => (
-                <a key={s.label} href="#" aria-label={s.label} className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-300 transition hover:border-brand hover:bg-brand hover:text-white">
+                <a key={s.label} href="#" aria-label={s.label} className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-300 hover:border-brand hover:bg-brand hover:text-white">
                   <s.icon className="h-4 w-4" />
                 </a>
               ))}
@@ -331,7 +331,7 @@ export function Footer() {
             <ul className="mt-5 grid grid-cols-2 gap-x-4 gap-y-2.5 lg:grid-cols-1">
               {navLinks.map((l) => (
                 <li key={l.path}>
-                  <Link to={l.path} className="text-sm text-slate-400 transition hover:text-white hover:pl-1">{l.label}</Link>
+                  <Link to={l.path} className="text-sm text-slate-400 hover:text-white">{l.label}</Link>
                 </li>
               ))}
             </ul>
@@ -341,7 +341,7 @@ export function Footer() {
             <ul className="mt-5 space-y-2.5">
               {["Web Development", "Mobile Development", "UI/UX Design", "Software Development", "E-Commerce", "AI & Automation"].map((s) => (
                 <li key={s}>
-                  <Link to="/services" className="text-sm text-slate-400 transition hover:text-white hover:pl-1">{s}</Link>
+                  <Link to="/services" className="text-sm text-slate-400 hover:text-white">{s}</Link>
                 </li>
               ))}
             </ul>
@@ -368,9 +368,9 @@ export function Footer() {
         <div className="flex flex-col items-center justify-between gap-4 border-t border-white/10 py-6 text-[13px] text-slate-500 sm:flex-row">
           <p>© 2026 CodeCraft Solutions. All Rights Reserved.</p>
           <div className="flex items-center gap-6">
-            <a href="#" className="transition hover:text-white">Privacy Policy</a>
-            <a href="#" className="transition hover:text-white">Terms & Conditions</a>
-            <Link to="/admin" className="transition hover:text-white">Admin</Link>
+            <a href="#" className="hover:text-white">Privacy Policy</a>
+            <a href="#" className="hover:text-white">Terms & Conditions</a>
+            <Link to="/admin" className="hover:text-white">Admin</Link>
           </div>
         </div>
       </div>
@@ -425,7 +425,7 @@ export function CTASection() {
         <Reveal delay={0.24}>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <button onClick={open} className="btn-primary group flex items-center gap-2 rounded-xl px-8 py-4 text-sm font-semibold">
-              Get a Quote <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              Get a Quote <ArrowRight className="h-4 w-4" />
             </button>
             <Link to="/portfolio" className="btn-ghost-dark flex items-center gap-2 rounded-xl px-8 py-4 text-sm font-semibold">
               View Our Work
@@ -493,7 +493,7 @@ function QuoteModal({ isOpen, onClose, presetService }: { isOpen: boolean; onClo
                     <h3 className="font-display mt-1.5 text-xl font-extrabold text-charcoal sm:text-2xl">Tell us about your project</h3>
                     <p className="mt-1 text-sm text-muted">We reply with an estimate within 24 hours.</p>
                   </div>
-                  <button onClick={onClose} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-paper text-charcoal transition hover:bg-paper-2">
+                  <button onClick={onClose} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-paper text-charcoal hover:bg-paper-2">
                     <X className="h-5 w-5" />
                   </button>
                 </div>
@@ -541,7 +541,7 @@ function QuoteModal({ isOpen, onClose, presetService }: { isOpen: boolean; onClo
                   </div>
                   <div className="sm:col-span-2">
                     <label className={labelCls}>Attach Files <span className="font-normal text-muted">(brief, wireframes, docs — optional)</span></label>
-                    <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-line bg-paper px-4 py-4 text-sm font-medium text-muted transition hover:border-brand hover:bg-brand-light hover:text-brand">
+                    <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-line bg-paper px-4 py-4 text-sm font-medium text-muted hover:border-brand hover:bg-brand-light hover:text-brand">
                       <Upload className="h-4 w-4" />
                       {fileName || "Choose files or drag & drop here"}
                       <input type="file" multiple className="hidden" onChange={(e) => setFileName(e.target.files?.length ? `${e.target.files.length} file(s) selected` : "")} />
@@ -568,7 +568,7 @@ function QuoteModal({ isOpen, onClose, presetService }: { isOpen: boolean; onClo
                   <Calendar className="h-8 w-8 shrink-0 text-brand" />
                   <p className="text-charcoal"><span className="font-semibold">What happens next?</span><br /><span className="text-muted">A project manager will schedule a free 30-min discovery call.</span></p>
                 </div>
-                <button onClick={onClose} className="mt-7 rounded-xl bg-ink px-8 py-3 text-sm font-semibold text-white transition hover:bg-ink-3">Close</button>
+                <button onClick={onClose} className="mt-7 rounded-xl bg-ink px-8 py-3 text-sm font-semibold text-white hover:bg-ink-3">Close</button>
               </div>
             )}
           </motion.div>
@@ -598,7 +598,7 @@ export function BackToTop() {
         <motion.button
           initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-6 right-6 z-40 flex h-11 w-11 items-center justify-center rounded-xl bg-ink text-white shadow-dark-card transition hover:bg-brand"
+          className="fixed bottom-6 right-6 z-40 flex h-11 w-11 items-center justify-center rounded-xl bg-ink text-white shadow-dark-card hover:bg-brand"
           aria-label="Back to top"
         >
           <ChevronRight className="h-5 w-5 -rotate-90" />

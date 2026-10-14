@@ -85,7 +85,7 @@ function Hero() {
               className="mt-8 flex flex-col gap-3 sm:flex-row"
             >
               <button onClick={open} className="btn-primary group flex items-center justify-center gap-2 rounded-xl px-8 py-4 text-sm font-semibold">
-                Get Started <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                Get Started <ArrowRight className="h-4 w-4" />
               </button>
               <Link to="/portfolio" className="btn-ghost-dark group flex items-center justify-center gap-2 rounded-xl px-8 py-4 text-sm font-semibold">
                 <Play className="h-4 w-4 fill-current" /> View Our Work
@@ -235,21 +235,21 @@ function Services() {
           {services.map((s, i) => (
             <Reveal key={s.slug} delay={(i % 4) * 0.07}>
               <div className="card-lift group flex h-full flex-col rounded-2xl border border-line bg-white p-6 shadow-card">
-                <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-ink text-white transition-colors duration-300 group-hover:bg-brand group-hover:shadow-blue">
+                <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-ink text-white group-hover:bg-brand group-hover:shadow-blue">
                   <DynIcon name={s.icon} className="h-[22px] w-[22px]" />
                 </span>
                 <h3 className="font-display mt-5 text-[17px] font-bold text-charcoal">{s.title}</h3>
                 <p className="mt-1 text-[13px] font-semibold text-brand">{s.tagline}</p>
                 <p className="mt-2.5 flex-1 text-sm leading-relaxed text-muted">{s.description.slice(0, 110)}…</p>
-                <button onClick={() => openWithService(s.title)} className="mt-5 flex items-center gap-1.5 text-sm font-semibold text-charcoal transition group-hover:text-brand">
-                  Learn More <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                <button onClick={() => openWithService(s.title)} className="mt-5 flex items-center gap-1.5 text-sm font-semibold text-charcoal group-hover:text-brand">
+                  Learn More <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
             </Reveal>
           ))}
         </div>
         <Reveal className="mt-10 text-center">
-          <Link to="/services" className="inline-flex items-center gap-2 rounded-xl border border-line bg-white px-7 py-3.5 text-sm font-semibold text-charcoal shadow-card transition hover:border-brand hover:text-brand">
+          <Link to="/services" className="inline-flex items-center gap-2 rounded-xl border border-line bg-white px-7 py-3.5 text-sm font-semibold text-charcoal shadow-card hover:border-brand hover:text-brand">
             Explore All Services <ArrowUpRight className="h-4 w-4" />
           </Link>
         </Reveal>
@@ -288,8 +288,8 @@ function WhyChoose() {
           <div className="grid gap-4 sm:grid-cols-2">
             {whyChooseUs.map((w, i) => (
               <Reveal key={w.title} delay={(i % 2) * 0.08}>
-                <div className="group h-full rounded-2xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur transition hover:border-brand/60 hover:bg-white/[0.07]">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand/15 text-[#7aa5ff] transition group-hover:bg-brand group-hover:text-white group-hover:shadow-blue">
+                <div className="group h-full rounded-2xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur hover:border-brand/60 hover:bg-white/[0.07]">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand/15 text-[#7aa5ff] group-hover:bg-brand group-hover:text-white group-hover:shadow-blue">
                     <DynIcon name={w.icon} className="h-5 w-5" />
                   </span>
                   <h3 className="font-display mt-4 text-[16px] font-bold text-white">{w.title}</h3>
@@ -358,7 +358,7 @@ function TechPreview() {
           ))}
         </div>
         <Reveal className="mt-10 text-center">
-          <Link to="/technologies" className="inline-flex items-center gap-2 rounded-xl bg-ink px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-brand">
+          <Link to="/technologies" className="inline-flex items-center gap-2 rounded-xl bg-ink px-7 py-3.5 text-sm font-semibold text-white hover:bg-brand">
             View All Technologies <ArrowRight className="h-4 w-4" />
           </Link>
         </Reveal>
@@ -372,13 +372,13 @@ export function ProjectCard({ p, large }: { p: Project; large?: boolean }) {
   return (
     <div className="card-lift group overflow-hidden rounded-2xl border border-line bg-white shadow-card">
       <div className={cn("relative overflow-hidden", large ? "h-60 sm:h-72" : "h-52")}>
-        <img src={p.image} alt={p.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+        <img src={p.image} alt={p.name} loading="lazy" className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/10 to-transparent" />
         <span className="absolute left-4 top-4 rounded-lg bg-white/95 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-charcoal shadow-card">{p.category}</span>
         <span className="absolute bottom-4 left-4 rounded-lg bg-ink/80 px-3 py-1.5 font-mono text-[11px] font-semibold text-white backdrop-blur">{p.year} • {p.duration}</span>
       </div>
       <div className="p-6">
-        <h3 className="font-display text-lg font-bold text-charcoal transition group-hover:text-brand">{p.name}</h3>
+        <h3 className="font-display text-lg font-bold text-charcoal group-hover:text-brand">{p.name}</h3>
         <p className="mt-2 text-sm leading-relaxed text-muted">{p.description}</p>
         <div className="mt-4 flex flex-wrap gap-1.5">
           {p.technologies.map((t) => (
@@ -391,7 +391,7 @@ export function ProjectCard({ p, large }: { p: Project; large?: boolean }) {
               <span key={r.label}><span className="font-display block text-[16px] font-extrabold text-brand">{r.value}</span><span className="block text-[11px] font-medium text-muted">{r.label}</span></span>
             ))}
           </div>
-          <Link to={`/portfolio`} className="flex h-10 w-10 items-center justify-center rounded-xl bg-ink text-white transition group-hover:bg-brand">
+          <Link to={`/portfolio`} className="flex h-10 w-10 items-center justify-center rounded-xl bg-ink text-white group-hover:bg-brand">
             <ArrowUpRight className="h-4.5 w-4.5 h-5 w-5" />
           </Link>
         </div>
@@ -429,7 +429,7 @@ function FeaturedWork() {
         {!loading && error && (
           <div className="mt-10 rounded-2xl border border-line bg-white p-8 text-center">
             <p className="text-sm font-semibold text-charcoal">{error}</p>
-            <button onClick={reload} className="mt-4 rounded-xl border border-line px-5 py-2.5 text-sm font-semibold text-charcoal transition hover:border-brand hover:text-brand">Try again</button>
+            <button onClick={reload} className="mt-4 rounded-xl border border-line px-5 py-2.5 text-sm font-semibold text-charcoal hover:border-brand hover:text-brand">Try again</button>
           </div>
         )}
         {!loading && !error && list.length === 0 && <p className="mt-10 text-center text-sm font-medium text-muted">No projects published yet.</p>}
@@ -514,8 +514,8 @@ export function TeamCard({ m }: { m: (typeof team)[number] }) {
   return (
     <div className="card-lift group overflow-hidden rounded-2xl border border-line bg-white shadow-card">
       <div className="relative h-64 overflow-hidden bg-paper">
-        <img src={m.image} alt={m.name} loading="lazy" className="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-105" />
-        <div className="absolute inset-0 bg-gradient-to-t from-ink/60 to-transparent opacity-0 transition group-hover:opacity-100" />
+        <img src={m.image} alt={m.name} loading="lazy" className="h-full w-full object-cover object-top" />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink/60 to-transparent opacity-0 group-hover:opacity-100" />
         <span className="absolute right-3 top-3 rounded-lg bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-charcoal shadow-card">{m.location}</span>
       </div>
       <div className="p-5">
@@ -541,7 +541,7 @@ function TeamPreview() {
           ))}
         </div>
         <Reveal className="mt-10 text-center">
-          <Link to="/team" className="inline-flex items-center gap-2 rounded-xl border border-line bg-white px-7 py-3.5 text-sm font-semibold text-charcoal shadow-card transition hover:border-brand hover:text-brand">
+          <Link to="/team" className="inline-flex items-center gap-2 rounded-xl border border-line bg-white px-7 py-3.5 text-sm font-semibold text-charcoal shadow-card hover:border-brand hover:text-brand">
             Meet the Full Team <ArrowRight className="h-4 w-4" />
           </Link>
         </Reveal>
@@ -599,8 +599,8 @@ function Testimonials() {
                 ))}
               </div>
               <div className="flex gap-2">
-                <button onClick={() => setIdx((idx - 1 + testimonials.length) % testimonials.length)} className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-white text-charcoal transition hover:border-brand hover:text-brand" aria-label="Previous"><ChevronLeft className="h-5 w-5" /></button>
-                <button onClick={() => setIdx((idx + 1) % testimonials.length)} className="flex h-10 w-10 items-center justify-center rounded-xl bg-ink text-white transition hover:bg-brand" aria-label="Next"><ChevronRight className="h-5 w-5" /></button>
+                <button onClick={() => setIdx((idx - 1 + testimonials.length) % testimonials.length)} className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-white text-charcoal hover:border-brand hover:text-brand" aria-label="Previous"><ChevronLeft className="h-5 w-5" /></button>
+                <button onClick={() => setIdx((idx + 1) % testimonials.length)} className="flex h-10 w-10 items-center justify-center rounded-xl bg-ink text-white hover:bg-brand" aria-label="Next"><ChevronRight className="h-5 w-5" /></button>
               </div>
             </div>
           </div>
@@ -615,15 +615,15 @@ export function BlogCard({ p }: { p: (typeof blogPosts)[number] }) {
   return (
     <Link to="/blog" className="card-lift group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-card">
       <div className="relative h-48 overflow-hidden">
-        <img src={p.image} alt={p.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+        <img src={p.image} alt={p.title} loading="lazy" className="h-full w-full object-cover" />
         <span className="absolute left-4 top-4 rounded-lg bg-brand px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white shadow-blue">{p.category}</span>
       </div>
       <div className="flex flex-1 flex-col p-6">
         <p className="text-[12px] font-medium text-muted">{p.date} • {p.readTime}</p>
-        <h3 className="font-display mt-2 text-[17px] font-bold leading-snug text-charcoal transition group-hover:text-brand">{p.title}</h3>
+        <h3 className="font-display mt-2 text-[17px] font-bold leading-snug text-charcoal group-hover:text-brand">{p.title}</h3>
         <p className="mt-2 line-clamp-2 flex-1 text-sm leading-relaxed text-muted">{p.excerpt}</p>
-        <span className="mt-4 flex items-center gap-1.5 text-sm font-semibold text-charcoal transition group-hover:text-brand">
-          Read More <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+        <span className="mt-4 flex items-center gap-1.5 text-sm font-semibold text-charcoal group-hover:text-brand">
+          Read More <ArrowRight className="h-4 w-4" />
         </span>
       </div>
     </Link>
@@ -637,7 +637,7 @@ function BlogPreview() {
         <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
           <SectionHeading align="left" eyebrow="Insights" title="Latest Insights" sub="Practical thinking on engineering, design and AI — from our team to yours." />
           <Reveal>
-            <Link to="/blog" className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-ink px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand">
+            <Link to="/blog" className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-ink px-6 py-3 text-sm font-semibold text-white hover:bg-brand">
               View All Articles <ArrowRight className="h-4 w-4" />
             </Link>
           </Reveal>

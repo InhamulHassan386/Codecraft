@@ -61,7 +61,7 @@ export default function Portfolio() {
           {!loading && error && (
             <div className="mt-8 rounded-2xl border border-line bg-white p-8 text-center">
               <p className="text-sm font-semibold text-charcoal">{error}</p>
-              <button onClick={reload} className="mt-4 rounded-xl border border-line px-5 py-2.5 text-sm font-semibold text-charcoal transition hover:border-brand hover:text-brand">Try again</button>
+              <button onClick={reload} className="mt-4 rounded-xl border border-line px-5 py-2.5 text-sm font-semibold text-charcoal hover:border-brand hover:text-brand">Try again</button>
             </div>
           )}
           {!loading && !error && list.length === 0 && (
@@ -75,10 +75,10 @@ export default function Portfolio() {
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.45 }}
-                className="group overflow-hidden rounded-2xl border border-line bg-white shadow-card transition hover:-translate-y-1.5 hover:shadow-card-hover"
+                className="group overflow-hidden rounded-2xl border border-line bg-white shadow-card hover:shadow-card-hover"
               >
                 <div className="relative h-64 overflow-hidden sm:h-72">
-                  <img src={p.image} alt={p.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  <img src={p.image} alt={p.name} loading="lazy" className="h-full w-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-ink/75 via-ink/10 to-transparent" />
                   <span className="absolute left-5 top-5 rounded-lg bg-white/95 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-charcoal">{p.category}</span>
                   <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between gap-4">
@@ -106,10 +106,10 @@ export default function Portfolio() {
                     ))}
                   </div>
                   <div className="mt-5 flex gap-3">
-                    <button onClick={() => setActiveSlug(p.slug)} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-ink px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand">
+                    <button onClick={() => setActiveSlug(p.slug)} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-ink px-5 py-3 text-sm font-semibold text-white hover:bg-brand">
                       View Case Study <ArrowUpRight className="h-4 w-4" />
                     </button>
-                    <button onClick={open} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-line px-5 py-3 text-sm font-semibold text-charcoal transition hover:border-brand hover:text-brand">
+                    <button onClick={open} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-line px-5 py-3 text-sm font-semibold text-charcoal hover:border-brand hover:text-brand">
                       Start Similar <ArrowRight className="h-4 w-4" />
                     </button>
                   </div>

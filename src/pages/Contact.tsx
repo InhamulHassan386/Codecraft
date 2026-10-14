@@ -50,7 +50,7 @@ export default function Contact() {
                       { icon: FacebookIcon, l: "Facebook" },
                       { icon: InstagramIcon, l: "Instagram" },
                     ].map((s) => (
-                      <a key={s.l} href="#" aria-label={s.l} className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-300 transition hover:border-brand hover:bg-brand hover:text-white">
+                      <a key={s.l} href="#" aria-label={s.l} className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:border-brand hover:bg-brand hover:text-white">
                         <s.icon className="h-4 w-4" />
                       </a>
                     ))}
@@ -104,7 +104,7 @@ export default function Contact() {
                     </motion.div>
                     <h3 className="font-display mt-5 text-2xl font-extrabold text-charcoal">Message sent successfully!</h3>
                     <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted">Thanks for reaching out. A member of our team will reply within one business day — usually much faster.</p>
-                    <button onClick={() => setSent(false)} className="mt-6 rounded-xl border border-line px-8 py-3 text-sm font-semibold text-charcoal transition hover:border-brand hover:text-brand">Send another message</button>
+                    <button onClick={() => setSent(false)} className="mt-6 rounded-xl border border-line px-8 py-3 text-sm font-semibold text-charcoal hover:border-brand hover:text-brand">Send another message</button>
                   </div>
                 )}
               </div>
@@ -119,7 +119,7 @@ export default function Contact() {
                   <h3 className="font-display text-lg font-bold text-charcoal">Find us in Austin, TX</h3>
                   <p className="text-sm text-muted">100 Tech Avenue, Suite 400, Austin, TX 78701 — plus remote teams worldwide.</p>
                 </div>
-                <a href="https://maps.google.com/?q=Austin,TX" target="_blank" rel="noreferrer" className="rounded-xl bg-ink px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-brand">Get Directions</a>
+                <a href="https://maps.google.com/?q=Austin,TX" target="_blank" rel="noreferrer" className="rounded-xl bg-ink px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand">Get Directions</a>
               </div>
               <iframe
                 title="CodeCraft Solutions office map"

@@ -17,7 +17,7 @@ export default function ServicesPage() {
       >
         <div className="mt-8 flex flex-wrap gap-2.5">
           {services.map((s) => (
-            <a key={s.slug} href={`#${s.slug}`} className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-[12.5px] font-semibold text-slate-200 backdrop-blur transition hover:border-brand hover:bg-brand hover:text-white">
+            <a key={s.slug} href={`#${s.slug}`} className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-[12.5px] font-semibold text-slate-200 backdrop-blur hover:border-brand hover:bg-brand hover:text-white">
               {s.title}
             </a>
           ))}
@@ -120,8 +120,8 @@ export default function ServicesPage() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-7">
               {processSteps.map((s, i) => (
                 <Reveal key={s.n} delay={i * 0.06}>
-                  <div className="group relative rounded-2xl border border-line bg-white p-5 text-center shadow-card transition hover:border-brand/50">
-                    <span className="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-ink text-white transition group-hover:bg-brand group-hover:shadow-blue">
+                  <div className="group relative rounded-2xl border border-line bg-white p-5 text-center shadow-card hover:border-brand/50">
+                    <span className="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-ink text-white group-hover:bg-brand group-hover:shadow-blue">
                       <DynIcon name={s.icon} className="h-6 w-6" />
                     </span>
                     <p className="mt-3 font-mono text-[11px] font-bold text-brand">{s.n}</p>

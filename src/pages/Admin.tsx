@@ -72,9 +72,9 @@ function StatusPill({ s }: { s: string }) {
 function RowActions({ onEdit, onDelete, onView }: { onEdit?: () => void; onDelete?: () => void; onView?: () => void }) {
   return (
     <div className="flex justify-end gap-1.5">
-      <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-brand hover:text-brand" onClick={onView} title="View"><Eye className="h-4 w-4" /></button>
-      <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-brand hover:text-brand" onClick={onEdit} title="Edit"><Pencil className="h-4 w-4" /></button>
-      <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-red-400 hover:text-red-500" onClick={onDelete} title="Delete"><Trash2 className="h-4 w-4" /></button>
+      <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted hover:border-brand hover:text-brand" onClick={onView} title="View"><Eye className="h-4 w-4" /></button>
+      <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted hover:border-brand hover:text-brand" onClick={onEdit} title="Edit"><Pencil className="h-4 w-4" /></button>
+      <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted hover:border-red-400 hover:text-red-500" onClick={onDelete} title="Delete"><Trash2 className="h-4 w-4" /></button>
     </div>
   );
 }
@@ -364,10 +364,10 @@ export default function Admin() {
             <span className="hidden text-left sm:block"><span className="block text-[12.5px] font-bold leading-none">Admin</span><span className="mt-0.5 block text-[10.5px] text-muted">Super Admin</span></span>
             <ChevronDown className="h-4 w-4 text-muted" />
           </button>
-          <Link to="/" className="hidden h-10 items-center gap-1.5 rounded-xl border border-line px-4 text-[13px] font-semibold text-charcoal transition hover:border-brand hover:text-brand sm:flex">
+          <Link to="/" className="hidden h-10 items-center gap-1.5 rounded-xl border border-line px-4 text-[13px] font-semibold text-charcoal hover:border-brand hover:text-brand sm:flex">
             ← Website
           </Link>
-          <button onClick={() => signOut()} className="hidden h-10 items-center gap-1.5 rounded-xl bg-ink px-4 text-[13px] font-semibold text-white transition hover:bg-red-600 sm:flex">
+          <button onClick={() => signOut()} className="hidden h-10 items-center gap-1.5 rounded-xl bg-ink px-4 text-[13px] font-semibold text-white hover:bg-red-600 sm:flex">
             <LogOut className="h-4 w-4" /> Logout
           </button>
         </div>
@@ -705,7 +705,7 @@ export default function Admin() {
                           </div>
                         ))}
                       </div>
-                      <button className="mt-4 w-full rounded-xl border border-line py-2.5 text-[13px] font-bold transition hover:border-brand hover:text-brand">Edit {c.t}</button>
+                      <button className="mt-4 w-full rounded-xl border border-line py-2.5 text-[13px] font-bold hover:border-brand hover:text-brand">Edit {c.t}</button>
                     </div>
                   ))}
                 </div>

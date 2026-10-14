@@ -29,7 +29,7 @@ export default function TeamPage() {
               <Reveal key={m.name} delay={(i % 4) * 0.07}>
                 <div className="card-lift group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-card">
                   <div className="relative h-72 overflow-hidden">
-                    <img src={m.image} alt={m.name} loading="lazy" className="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-105" />
+                    <img src={m.image} alt={m.name} loading="lazy" className="h-full w-full object-cover object-top" />
                     <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-transparent" />
                     <span className="absolute left-4 top-4 flex items-center gap-1.5 rounded-lg bg-white/95 px-2.5 py-1.5 text-[11px] font-semibold text-charcoal">
                       <MapPin className="h-3 w-3 text-brand" />{m.location}
@@ -40,8 +40,8 @@ export default function TeamPage() {
                         <p className="text-[12.5px] font-semibold text-brand-glow">{m.role}</p>
                       </div>
                       <div className="flex gap-1.5">
-                        <a href="#" aria-label={`${m.name} LinkedIn`} className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white backdrop-blur transition hover:bg-brand"><LinkedinIcon className="h-4 w-4" /></a>
-                        <a href="#" aria-label={`${m.name} GitHub`} className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white backdrop-blur transition hover:bg-brand"><GithubIcon className="h-4 w-4" /></a>
+                        <a href="#" aria-label={`${m.name} LinkedIn`} className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white backdrop-blur hover:bg-brand"><LinkedinIcon className="h-4 w-4" /></a>
+                        <a href="#" aria-label={`${m.name} GitHub`} className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white backdrop-blur hover:bg-brand"><GithubIcon className="h-4 w-4" /></a>
                       </div>
                     </div>
                   </div>

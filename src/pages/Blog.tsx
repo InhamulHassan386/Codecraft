@@ -48,7 +48,7 @@ export default function BlogPage() {
             <Reveal>
               <button onClick={() => setReading(featured.slug)} className="group grid w-full overflow-hidden rounded-3xl border border-line bg-paper text-left shadow-card lg:grid-cols-2">
                 <div className="relative h-64 overflow-hidden lg:h-full lg:min-h-[340px]">
-                  <img src={featured.image} alt={featured.title} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  <img src={featured.image} alt={featured.title} className="absolute inset-0 h-full w-full object-cover" />
                   <span className="absolute left-5 top-5 rounded-lg bg-brand px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white">Featured · {featured.category}</span>
                 </div>
                 <div className="p-7 sm:p-10">
@@ -56,13 +56,13 @@ export default function BlogPage() {
                     <span className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" />{featured.date}</span>
                     <span className="flex items-center gap-1.5"><Clock3 className="h-3.5 w-3.5" />{featured.readTime}</span>
                   </p>
-                  <h2 className="font-display mt-3 text-2xl font-extrabold leading-tight text-charcoal transition group-hover:text-brand sm:text-3xl">{featured.title}</h2>
+                  <h2 className="font-display mt-3 text-2xl font-extrabold leading-tight text-charcoal group-hover:text-brand sm:text-3xl">{featured.title}</h2>
                   <p className="mt-3 leading-relaxed text-muted">{featured.excerpt}</p>
                   <span className="mt-5 flex items-center gap-3">
                     <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ink text-[13px] font-bold text-white">{featured.author.split(" ").map((w) => w[0]).join("")}</span>
                     <span><span className="block text-sm font-bold text-charcoal">{featured.author}</span><span className="block text-[12px] text-muted">{featured.authorRole}</span></span>
                   </span>
-                  <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-brand">Read Article <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></span>
+                  <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-brand">Read Article <ArrowRight className="h-4 w-4" /></span>
                 </div>
               </button>
             </Reveal>
@@ -149,7 +149,7 @@ export default function BlogPage() {
                 <div className="mt-4 grid gap-3 sm:grid-cols-3">
                   {related.map((r) => (
                     <button key={r.slug} onClick={() => setReading(r.slug)} className="group overflow-hidden rounded-xl border border-line text-left">
-                      <img src={r.image} alt={r.title} className="h-28 w-full object-cover transition group-hover:scale-105" />
+                      <img src={r.image} alt={r.title} className="h-28 w-full object-cover" />
                       <span className="block p-3 text-[13px] font-bold leading-snug text-charcoal group-hover:text-brand">{r.title.slice(0, 60)}…</span>
                     </button>
                   ))}
